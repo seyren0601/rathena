@@ -1,0 +1,35 @@
+prontera,150,180,3	script	Endower	929,{
+	mes "[Endower]";
+	mes "Greetings.";
+	mes "Which elemental attribute would you like to add to your weapon?";
+	.@selected = select("Fire", "Water", "Wind", "Earth", "Holy");
+	clear;
+	mes "[Endower]";
+	switch(.@selected) {
+		case 1:
+			sc_start SC_FIREWEAPON,1800000,0;
+			specialeffect2	EF_FLAMELAUNCHER;
+			mes "Your weapon has been enchanted with Fire.";
+			close;
+		case 2:
+			sc_start SC_WATERWEAPON,1800000,0;
+			specialeffect2	EF_FROSTWEAPON;
+			mes "Your weapon has been enchanted with Water.";
+			close;
+		case 3:
+			sc_start SC_WINDWEAPON,1800000,0;
+			specialeffect2	EF_LIGHTNINGLOADER;
+			mes "Your weapon has been enchanted with Wind.";
+			close;
+		case 4:
+			sc_start SC_EARTHWEAPON,1800000,0;
+			specialeffect2	EF_SEISMICWEAPON;
+			mes "Your weapon has been enchanted with Earth.";
+			close;
+		case 5:
+			sc_start SC_ASPERSIO,1800000,0;
+			specialeffect2	EF_ASPERSIO;
+			mes "Your weapon has been enchanted with Holy.";
+			close;
+	}
+}
