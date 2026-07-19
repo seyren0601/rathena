@@ -32,6 +32,60 @@ Header:
   Type: ITEM_CASH_DB
   Version: 1
 
+Body:
+  - Tab: New
+    Items:
+     - Item: C_Released_Ground
+       Price: 500
+     - Item: C_Spot_Light
+       Price: 1000
+  - Tab: Hot
+    Items:
+     - Item: Lightning_Cloud
+       Price: 1000
+     - Item: Rain_Cloud
+       Price: 1000
+     - Item: C_Let_It_Snow
+       Price: 1000
+  - Tab: Limited
+    Items:
+     - Item: C_Evil_Druid_Cross
+       Price: 1000
+     - Item: C_Black_Strong_Hair
+       Price: 1000
+  - Tab: Rental
+    Items:
+     - Item: C_Blossom_Fluttering
+       Price: 1000
+     - Item: C_Vampire_Hairband
+       Price: 1000
+  - Tab: Permanent
+    Items:
+     - Item: C_Angel_Fluttering
+       Price: 1000
+     - Item: C_Soulless_Wing
+       Price: 1000
+  - Tab: Scrolls
+    Items:
+     - Item: Battle_Manual_X3
+       Price: 300
+     - Item: HE_Battle_Manual
+       Price: 200
+  - Tab: Consumables
+    Items:
+     - Item: Infinity_Drink
+       Price: 10
+     - Item: ASPD_Potion
+       Price: 10
+     - Item: Red_Booster
+       Price: 10
+  - Tab: Other
+    Items:
+     - Item: Inventory_Ex_Evt
+       Price: 100
+     - Item: Insurance
+       Price: 5
+
 Footer:
   Imports:
     - Path: db/import/item_cash.yml
