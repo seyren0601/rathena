@@ -154,7 +154,7 @@ void aFree_(void *p, const char *file, int32 line, const char *func)
 #define BLOCK_DATA_COUNT1	128
 #define BLOCK_DATA_COUNT2	608
 
-/* The size of the block: 16*128 + 64*576 = 40KB */
+/* The size of the block: 16*128 + 64*608 = 40KB */
 #define BLOCK_DATA_SIZE1	( BLOCK_ALIGNMENT1 * BLOCK_DATA_COUNT1 )
 #define BLOCK_DATA_SIZE2	( BLOCK_ALIGNMENT2 * BLOCK_DATA_COUNT2 )
 #define BLOCK_DATA_SIZE		( BLOCK_DATA_SIZE1 + BLOCK_DATA_SIZE2 )
@@ -208,29 +208,27 @@ static uint16 size2hash( size_t size )
 {
 	if( size <= BLOCK_DATA_SIZE1 ) {
 		return (uint16)(size + BLOCK_ALIGNMENT1 - 1) / BLOCK_ALIGNMENT1;
-	} else if( size <= BLOCK_DATA_SIZE ){
+	}
+	
+	if( size <= BLOCK_DATA_SIZE ) {
 		return (uint16)(size - BLOCK_DATA_SIZE1 + BLOCK_ALIGNMENT2 - 1) / BLOCK_ALIGNMENT2
 				+ BLOCK_DATA_COUNT1;
-	} else {
-		return 0xffff;	// If it exceeds the block length hash I do not
 	}
+
+	return 0xffff;	// If it exceeds the block length hash I do not
 }
 
 static size_t hash2size( uint16 hash )
 {
 	if( hash <= BLOCK_DATA_COUNT1) {
 		return hash * BLOCK_ALIGNMENT1;
-	} else {
-		return (hash - BLOCK_DATA_COUNT1) * BLOCK_ALIGNMENT2 + BLOCK_DATA_SIZE1;
 	}
+
+	return (hash - BLOCK_DATA_COUNT1) * BLOCK_ALIGNMENT2 + BLOCK_DATA_SIZE1;
 }
 
 void* _mmalloc(size_t size, const char *file, int32 line, const char *func )
 {
-	struct block *block;
-	int16 size_hash = size2hash( size );
-	struct unit_head *head;
-
 	if( static_cast<long>( size ) < 0 || size == 0 ){
 		ShowError( "_mmalloc: Invalid allocation size %" PRIuPTR " bytes at %s:%d\n", size, file, line );
 		return nullptr;
@@ -240,35 +238,39 @@ void* _mmalloc(size_t size, const char *file, int32 line, const char *func )
 
 	/* To ensure the area that exceeds the length of the block, using malloc () to */
 	/* At that time, the distinction by assigning nullptr to unit_head.block */
-	if(hash2size(size_hash) > BLOCK_DATA_SIZE - sizeof(struct unit_head)) {
-		struct unit_head_large* p = (struct unit_head_large*)MALLOC(sizeof(struct unit_head_large)+size,file,line,func);
-		if(p != nullptr) {
-			p->size            = size;
-			p->unit_head.block = nullptr;
-			p->unit_head.size  = 0;
-			p->unit_head.file  = file;
-			p->unit_head.line  = line;
-			p->prev = nullptr;
-			if (unit_head_large_first == nullptr)
-				p->next = nullptr;
-			else {
-				unit_head_large_first->prev = p;
-				p->next = unit_head_large_first;
-			}
-			unit_head_large_first = p;
-			*(long*)((char*)p + sizeof(struct unit_head_large) - sizeof(long) + size) = FREED_POINTER;
-			return (char *)p + sizeof(struct unit_head_large) - sizeof(long);
-		} else {
+	int16 block_index = size2hash( size );
+	if(hash2size(block_index) > BLOCK_DATA_SIZE - sizeof(unit_head)) {
+		struct unit_head_large* p = (struct unit_head_large*)MALLOC(sizeof(unit_head_large)+size,file,line,func);
+		if(!p) {
 			ShowFatalError("Memory manager::memmgr_alloc failed (allocating %" PRIuPTR  "+%" PRIuPTR " bytes at %s:%d).\n", sizeof(struct unit_head_large), size, file, line);
 			exit(EXIT_FAILURE);
 		}
+
+		p->size            = size;
+		p->unit_head.block = nullptr;
+		p->unit_head.size  = 0;
+		p->unit_head.file  = file;
+		p->unit_head.line  = line;
+		p->prev = nullptr;
+		if (unit_head_large_first == nullptr)
+			p->next = nullptr;
+		else {
+			unit_head_large_first->prev = p;
+			p->next = unit_head_large_first;
+		}
+		unit_head_large_first = p;
+		*(long*)((char*)p + sizeof(unit_head_large) - sizeof(long) + size) = FREED_POINTER;
+
+		return (char *)p + sizeof(unit_head_large) - sizeof(long);
 	}
 
 	/* When a block of the same size is not ensured, to ensure a new */
-	if(hash_unfill[size_hash]) {
-		block = hash_unfill[size_hash];
+	struct block *block;
+	struct unit_head *head;
+	if(hash_unfill[block_index]) {
+		block = hash_unfill[block_index];
 	} else {
-		block = block_malloc(size_hash);
+		block = block_malloc(block_index);
 	}
 
 	if( block->unit_unfill == 0xFFFF ) {
@@ -287,7 +289,7 @@ void* _mmalloc(size_t size, const char *file, int32 line, const char *func )
 	if( block->unit_unfill == 0xFFFF && block->unit_maxused >= block->unit_count) {
 		// Since I ran out of the unit, removed from the list unfill
 		if( block->unfill_prev == &block_head) {
-			hash_unfill[ size_hash ] = block->unfill_next;
+			hash_unfill[ block_index ] = block->unfill_next;
 		} else {
 			block->unfill_prev->unfill_next = block->unfill_next;
 		}
@@ -299,7 +301,7 @@ void* _mmalloc(size_t size, const char *file, int32 line, const char *func )
 
 #ifdef DEBUG_MEMMGR
 	{
-		size_t i, sz = hash2size( size_hash );
+		size_t i, sz = hash2size( block_index );
 		for( i=0; i<sz; i++ )
 		{
 			if( ((unsigned char*)head)[ sizeof(struct unit_head) - sizeof(long) + i] != 0xfd )
