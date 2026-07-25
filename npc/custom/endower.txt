@@ -1,3 +1,5 @@
+//===== rAthena Script
+
 prontera,150,180,3	script	Endower	929,{
 	mes "[Endower]";
 	mes "Greetings.";
