@@ -37265,18 +37265,7 @@ Body:
     Name: Green Apple Ring
     Type: Armor
     Jobs:
-      Alchemist: true
-      Assassin: true
-      BardDancer: true
-      Blacksmith: true
-      Crusader: true
-      Hunter: true
-      Knight: true
-      Monk: true
-      Priest: true
-      Rogue: true
-      Sage: true
-      Wizard: true
+      All: true
     Classes:
       All_Third: true
       Fourth: true
