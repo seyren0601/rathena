@@ -3034,6 +3034,7 @@ Body:
       Warlock: true
       Warlock_T: true
       Baby_Warlock: true
+      Warlock_2nd: true
     MaxWeight: 30000
     HpFactor: 55
     SpIncrease: 900
