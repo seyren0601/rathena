@@ -272213,3 +272213,27 @@ Body:
       bonus bMaxHP,.@r*10;
       bonus2 bSkillAtk,"NW_WILD_FIRE",8+2*(.@r/3);
       bonus bBaseAtk,10*(.@r/2);
+  - Id: 490690
+    AegisName: Dragon_Eye_Ring
+    Name: Dragon Eye Ring
+    Type: Armor
+    Buy: 20
+    Weight: 100
+    Slots: 1
+    Job:
+      Rune_Knight: true
+    Locations: 
+      Right_Accessory: true
+    Condition:
+      Gender: Both
+    Script: |
+      bonus bVit,20;
+      bonus bMaxHPrate,20;
+      bonus bLongAtkRate,20;
+      bonus bPerfectHit,15;
+      bonus2 bSubClass,Class_Normal,10;
+      bonus2 bSubClass,Class_Boss,10;
+      bonus2 bSkillCooldown,"RK_HUNDREDSPEAR",-1000;
+      bonus2 bSkillAtk,"RK_DRAGONBREATH",BaseLevel;
+      bonus2 bSkillAtk,"RK_DRAGONBREATH_WATER",BaseLevel;
+      bonus2 bSkillAtk,"RK_HUNDREDSPEAR",BaseLevel * 5;

@@ -59318,3 +59318,13 @@ Body:
     Script: |
       bonus2 bExpAddRace,RC_All,5;
       bonus bFixedCast,-200;
+  - Items:
+      - Dragon_Eye_Ring
+      - YSF01_Ring
+    Script: |
+      bonus bMaxHPrate,15;
+      bonus bLongAtkRate,15;
+      bonus2 bAddSize,Size_All,15;
+      if (getrefine(EQI_ARMOR) >= 14) {
+        autobonus "{ bonus bPow,15; bonus bCon,15; bonus bStr,150; bonus bDex,150; }",30,10000,BF_WEAPON,"{ specialeffect2 EF_POTION_BLU; }";
+      }
