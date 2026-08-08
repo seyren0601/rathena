@@ -404,7 +404,7 @@ prt_cas_q,26,30,3	script	Chamberlain Bell#ep16_main	4_M_RUSMAN1,{
 		erasequest 7685;// What Is the Next Thing on the Schedule ?
 		setquest 7687;// Participating in the Banquet
 		getexp 300000,300000;
-		getitem 6919,10;// TokenOfHonor
+		getitem 6919,100;// TokenOfHonor
 		ep16_royal = 3;
 		next;
 		mes "[Belle]";
@@ -2042,7 +2042,7 @@ prt_lib,80,79,3	script	Kronecker G. Heine#ep16_01_lib01	4_EP16_GRANZ,{
 		mes "It is a shame, but you are the only hope left for us.";
 		mes "We are counting on you.";
 		erasequest 7703;// Who Knows the Truth
-		getitem 6919,30;// TokenOfHonor
+		getitem 6919,300;// TokenOfHonor
 		getexp 800000,800000;
 		setquest 7706;// Nillem Is Not Almighty
 		ep16_royal = 23;
@@ -2714,65 +2714,65 @@ prt_lib_q,110,58,4	script	Document#EP161DBOOK	CLEAR_NPC,{
 	next;
 	select("Keep reading.");
 	mes "Suspect Interrogation Record";
-	mes "Suspect: ¡á¡á¡á(Prisoner No.: 243AD265)";
+	mes "Suspect: ï¿½ï¿½ï¿½ï¿½(Prisoner No.: 243AD265)";
 	mes "In regard to the monster above, ^2EA4FFthe charges include taking of bribery, embezzlement, violence.^000000";
-	mes "On day ¡á¡á¡á¡á¡á, Paladin ¡á¡á¡á in the Royal Crusader Office had Crusader ¡á¡á¡á participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
+	mes "On day ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Paladin ï¿½ï¿½ï¿½ï¿½ in the Royal Crusader Office had Crusader ï¿½ï¿½ï¿½ï¿½ participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
 	next;
 	mes "It's all colored in black except a few modifiers and it's illegible.";
 	next;
 	select("Keep reading.");
 	mes "Suspect Interrogation Record";
-	mes "Suspect: ¡á¡á¡á(Prisoner No.: 267BD184)";
+	mes "Suspect: ï¿½ï¿½ï¿½ï¿½(Prisoner No.: 267BD184)";
 	mes "In regard to the monster above, ^2EA4FFthe charges include marriage fraud and marriage scam.^000000";
-	mes "On day ¡á¡á¡á¡á¡á, Paladin ¡á¡á¡á in the Royal Crusader Office had Crusader ¡á¡á¡á participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
+	mes "On day ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Paladin ï¿½ï¿½ï¿½ï¿½ in the Royal Crusader Office had Crusader ï¿½ï¿½ï¿½ï¿½ participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
 	next;
 	mes "It's all colored in black except a few modifiers and it's illegible.";
 	next;
 	select("Keep reading.");
 	mes "Suspect Interrogation Record";
-	mes "Suspect: ¡á¡á¡á(Prisoner No.: 265CM154)";
+	mes "Suspect: ï¿½ï¿½ï¿½ï¿½(Prisoner No.: 265CM154)";
 	mes "In regard to the monster above, ^2EA4FFthe charge includes the corruption of public morals.^000000";
-	mes "On day ¡á¡á¡á¡á¡á, Paladin ¡á¡á¡á in the Royal Crusader Office had Crusader ¡á¡á¡á participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
+	mes "On day ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Paladin ï¿½ï¿½ï¿½ï¿½ in the Royal Crusader Office had Crusader ï¿½ï¿½ï¿½ï¿½ participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
 	next;
 	mes "It's all colored in black except a few modifiers and it's illegible.";
 	next;
 	select("Keep reading.");
 	mes "Suspect Interrogation Record";
-	mes "Suspect: ¡á¡á¡á(Prisoner No.: 243DV17)";
-	mes "In regard to the monster above, ^2EA4FFthe charge includes ¡á¡á¡á.^000000";
-	mes "On day ¡á¡á¡á¡á¡á, Paladin ¡á¡á¡á in the Royal Crusader Office had Crusader ¡á¡á¡á participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
+	mes "Suspect: ï¿½ï¿½ï¿½ï¿½(Prisoner No.: 243DV17)";
+	mes "In regard to the monster above, ^2EA4FFthe charge includes ï¿½ï¿½ï¿½ï¿½.^000000";
+	mes "On day ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Paladin ï¿½ï¿½ï¿½ï¿½ in the Royal Crusader Office had Crusader ï¿½ï¿½ï¿½ï¿½ participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
 	next;
 	mes "It's all colored in black except a few modifiers and it's illegible.";
 	next;
 	select("Keep reading.");
 	mes "Suspect Interrogation Record";
-	mes "Suspect: ¡á¡á¡á(Prisoner No.: 95EB72)";
+	mes "Suspect: ï¿½ï¿½ï¿½ï¿½(Prisoner No.: 95EB72)";
 	mes "In regard to the monster above, ^2EA4FFthe charges include property damage and town invasion.^000000";
-	mes "On day ¡á¡á¡á¡á¡á, Paladin ¡á¡á¡á in the Royal Crusader Office had Crusader ¡á¡á¡á participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
+	mes "On day ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Paladin ï¿½ï¿½ï¿½ï¿½ in the Royal Crusader Office had Crusader ï¿½ï¿½ï¿½ï¿½ participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
 	next;
 	mes "It's all colored in black except a few modifiers and it's illegible.";
 	next;
 	select("Keep reading.");
 	mes "Suspect Interrogation Record";
-	mes "Suspect: ¡á¡á¡á(Prisoner No.: 117FM188)";
+	mes "Suspect: ï¿½ï¿½ï¿½ï¿½(Prisoner No.: 117FM188)";
 	mes "In regard to the monster above, ^2EA4FFthe charge includes hysteria and emotional blowup^000000";
-	mes "On day ¡á¡á¡á¡á¡á, Paladin ¡á¡á¡á in the Royal Crusader Office had Crusader ¡á¡á¡á participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
+	mes "On day ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Paladin ï¿½ï¿½ï¿½ï¿½ in the Royal Crusader Office had Crusader ï¿½ï¿½ï¿½ï¿½ participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
 	next;
 	mes "It's all colored in black except a few modifiers and it's illegible.";
 	next;
 	select("Keep reading.");
 	mes "Suspect Interrogation Record";
-	mes "Suspect: ¡á¡á¡á(Prisoner No.: 103GD214)";
+	mes "Suspect: ï¿½ï¿½ï¿½ï¿½(Prisoner No.: 103GD214)";
 	mes "In regard to the monster above, ^2EA4FFthe charges include property damage and town invasion.^000000";
-	mes "On day ¡á¡á¡á¡á¡á, Paladin ¡á¡á¡á in the Royal Crusader Office had Crusader ¡á¡á¡á participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
+	mes "On day ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Paladin ï¿½ï¿½ï¿½ï¿½ in the Royal Crusader Office had Crusader ï¿½ï¿½ï¿½ï¿½ participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
 	next;
 	mes "It's all colored in black except a few modifiers and it's illegible.";
 	next;
 	select("Keep reading.");
 	mes "Suspect Interrogation Record";
-	mes "Suspect: ¡á¡á¡á(Prisoner No.: 55HK115)";
+	mes "Suspect: ï¿½ï¿½ï¿½ï¿½(Prisoner No.: 55HK115)";
 	mes "In regard to the monster above, ^2EA4FFthe charges include fake experience certificates, fraud^000000";
-	mes "On day ¡á¡á¡á¡á¡á, Paladin ¡á¡á¡á in the Royal Crusader Office had Crusader ¡á¡á¡á participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
+	mes "On day ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, Paladin ï¿½ï¿½ï¿½ï¿½ in the Royal Crusader Office had Crusader ï¿½ï¿½ï¿½ï¿½ participate and informed the suspect that he/she has the right to remain silent to interrogate the suspect. What is set forth below is the statement of the suspect.";
 	next;
 	mes "It's all colored in black except a few modifiers and it's illegible.";
 	next;
@@ -2999,7 +2999,7 @@ prt_cas,309,200,5	script	Royal Head Chef#ep16_1	4_EP16_COOK,{
 		mes "I hope to be able to cook with you again!";
 		cutin "ep16cook_king_2",2;
 		getexp 700000,700000;
-		getitem 6919,10;// TokenOfHonor
+		getitem 6919,100;// TokenOfHonor
 		completequest 11420;// Why Should I Prepare for the Banquets?
 		ep16_cookbs = 23;
 		close3;
@@ -3202,7 +3202,7 @@ prt_cas,319,211,3	script	Royal Sauce Master#ep16	4_M_ALCHE_B,{
 		else {
 			erasequest 11421;// Banquet: Unexpected Sauce
 			setquest 11422;// Complete Today's Sauce
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			ep16_cookbs = 23;
 		}
 		close;
@@ -3436,7 +3436,7 @@ prt_cas,302,205,5	script	Dishwasher#ep16_1	4_M_ALCHE_D,{
 			delitem 6935,15;// Luxurious_Dish
 			erasequest 11426;// Banquet: Washing 15 Dishes
 			setquest 11427;// Complete Today's Dish Collecting
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			close;
 		case 0:
 		case 1:
@@ -3903,7 +3903,7 @@ prt_cas,358,124,0	script	Grilled Griffon#ep16_1	4_EP16_FOOD,{
 		mes "Place the dish carefully on the surface.";
 		erasequest 11424;// Banquet: Griffin Barbecue
 		setquest 11425;// Complete Today's Grilled Griffin
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 	}
 	mes "A tasty-looking Grilled Griffon.";
 	close;
@@ -4675,7 +4675,7 @@ prt_cas_q,14,184,5	script	Isenhonor Walther#ep16wal	4_M_1STPRIN1,{
 		mes "You are a valuable guest for us, the Walther family, from now on, dear adventurer. I'll help you anytime you want.";
 		delitem 6929,1;// Letters_Stamped_Seal
 		completequest 14474;// Report to Isenhonor
-		getitem 6919,10;// TokenOfHonor
+		getitem 6919,100;// TokenOfHonor
 		getexp 1000000,500000;
 		ep16_wal = 7;
 		close;
@@ -5421,7 +5421,7 @@ prt_cas_q,21,83,3	script	Friedrich S. Heine#ep16_01	4_EP16_STOLZ,{
 		mes "See you tomorrow then.";
 		setquest 7706;// Nillem Is Not Almighty
 		erasequest 7705;// Hope You Cannot Let Go
-		getitem 6919,10;// TokenOfHonor
+		getitem 6919,100;// TokenOfHonor
 		getexp 400000,400000;
 		close3;
 	}
@@ -5742,7 +5742,7 @@ prt_cas_q,19,85,4	script	Kronecker G. Heine#ep16_01	4_EP16_GRANZ,{
 		ep16_royal = 17;
 		setquest 7699;// To the Past
 		erasequest 7698;// Heine Now
-		getitem 6919,20;// TokenOfHonor
+		getitem 6919,200;// TokenOfHonor
 		getexp 400000,400000;
 		close3;
 	}
@@ -6106,7 +6106,7 @@ prt_cas_q,90,186,5	script	Maximilian Roegenburg#ep16lug	4_EP16_MAX,{
 		mes "[Maximilian]";
 		mes "If you need a help from the Roegenburg, come to use anytime. The gate of the Roegenburg is always opened to you.";
 		completequest 14507;// To Maximilian
-		getitem 6919,10;// TokenOfHonor
+		getitem 6919,100;// TokenOfHonor
 		getexp 1000000,500000;
 		ep16_lug = 13;
 		close;
@@ -6302,7 +6302,7 @@ prt_cas_q,96,184,1	script	Agnes Roegenburg#ep16lu	4_EP16_AGNES,{
 			delitem 949,50;// Feather
 			erasequest 14508;// Jewel and Cloth
 			setquest 14509;// Still Making It
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			ep16_lug = 15;
 			close3;
@@ -6362,7 +6362,7 @@ prt_cas_q,96,184,1	script	Agnes Roegenburg#ep16lu	4_EP16_AGNES,{
 			delitem 509,10;// White Herb
 			erasequest 14510;// Pink Petal-like Dress
 			setquest 14509;// Still Making It
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			close3;
 		case 14511:
@@ -6421,7 +6421,7 @@ prt_cas_q,96,184,1	script	Agnes Roegenburg#ep16lu	4_EP16_AGNES,{
 			delitem 6510,5;// Elegant Flower
 			erasequest 14511;// Beautiful Flower Decoration
 			setquest 14509;// Still Making It
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			close3;
 		case 14512:
@@ -6470,7 +6470,7 @@ prt_cas_q,96,184,1	script	Agnes Roegenburg#ep16lu	4_EP16_AGNES,{
 			delitem 7205,20;// Piece of Black Cloth
 			erasequest 14512;// Dress of the Night Sky
 			setquest 14509;// Still Making It
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			close3;
 		case 14513:
@@ -6519,7 +6519,7 @@ prt_cas_q,96,184,1	script	Agnes Roegenburg#ep16lu	4_EP16_AGNES,{
 			delitem 7122,20;// Burning Hair
 			erasequest 14513;// Shawl of the Blazing Sun
 			setquest 14509;// Still Making It
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			close3;
 		case 14514:
@@ -6568,7 +6568,7 @@ prt_cas_q,96,184,1	script	Agnes Roegenburg#ep16lu	4_EP16_AGNES,{
 			delitem 6557,5;// Fancy Fairy Wing
 			erasequest 14514;// Step of the Fairy
 			setquest 14509;// Still Making It
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			close3;
 		case 14515:
@@ -6617,7 +6617,7 @@ prt_cas_q,96,184,1	script	Agnes Roegenburg#ep16lu	4_EP16_AGNES,{
 			delitem 1001,5;// Star Dust
 			erasequest 14515;// Sparkling Star
 			setquest 14509;// Still Making It
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			close3;
 		default:	// none quest
@@ -8794,7 +8794,7 @@ prt_cas_q,80,80,4	script	Butler for the Richards#EP161GAM	1_M_LIBRARYMASTER,{
 		erasequest .@quest_list[.@i];
 		setquest 5414;// [Stand by]Warrior Discipline
 		getexp 500000,550000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Butler]";
 		mes "Congratulations on completing the training.";
 		next;
@@ -9561,7 +9561,7 @@ prt_cas,73,244,5	script	Scarlet Jaha#ep16_1	1_F_LIBRARYGIRL,{
 		mes "[Scarlet Jaha]";
 		mes "What a waste to let the banquet end like this!";
 		getexp 700000,700000;
-		getitem 6919,10;// TokenOfHonor
+		getitem 6919,100;// TokenOfHonor
 		completequest 11412;// The Geoborgs
 		ep16_gaobs = 14;
 		close;
@@ -11069,7 +11069,7 @@ prt_cas_q,95,9,5	script	Jurgen Wigner#ep16wig	4_M_4THPRIN1,{
 		completequest 14487;// Please Find the Token of Memory
 		delitem 6927, countitem(6927);// Filled_With_SeaStones
 		delitem 748,1;// Witherless Rose
-		getitem 6919,10;// TokenOfHonor
+		getitem 6919,100;// TokenOfHonor
 		getexp 1000000,500000;
 		ep16_wig = 16;
 		close3;
@@ -11437,7 +11437,7 @@ prt_cas_q,95,9,5	script	Jurgen Wigner#ep16wig	4_M_4THPRIN1,{
 			mes "I'll see you tomorrow then!";
 			erasequest 14491;// I Have to Turn It Down Again
 			setquest 14492;// There Is a Silver Lining
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			ep16_wig = 21;
 			close3;
@@ -11487,7 +11487,7 @@ prt_cas_q,95,9,5	script	Jurgen Wigner#ep16wig	4_M_4THPRIN1,{
 			mes "Then dear adventurer, I'll see you again tomorrow.";
 			erasequest 14494;// I Have to Turn It Down Again
 			setquest 14492;// There Is a Silver Lining
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			getexp 200000,200000;
 			close3;
 		}
@@ -14765,7 +14765,7 @@ prt_q,156,324,6	script	Chief Guard#EP161PG	4_EP16_SPIEGEL,{
 		erasequest 5456;// Ungrateful(4)
 		setquest 5452;// [Stand by]Request from Chief Guard
 		getexp 800000,250000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Chief Guard Spiegel]";
 		mes "Since we are in a difficult situation, we cannot offer you anything too spectacular, but this is the rewards for you prepared by the Guards.";
 		close;
@@ -14786,7 +14786,7 @@ prt_q,156,324,6	script	Chief Guard#EP161PG	4_EP16_SPIEGEL,{
 		erasequest 5459;// Find My Sister(3)
 		setquest 5452;// [Stand by]Request from Chief Guard
 		getexp 800000,250000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Chief Guard Spiegel]";
 		mes "Since we are in a difficult situation, we cannot offer you anything too spectacular, but this is the rewards for you prepared by the Guards.";
 		close;
@@ -14804,7 +14804,7 @@ prt_q,156,324,6	script	Chief Guard#EP161PG	4_EP16_SPIEGEL,{
 		erasequest 5462;// Blatant Bluff(3)
 		setquest 5452;// [Stand by]Request from Chief Guard
 		getexp 800000,250000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Chief Guard Spiegel]";
 		mes "Since we are in a difficult situation, we cannot offer you anything too spectacular, but this is the rewards for you prepared by the Guards.";
 		close;
@@ -14822,7 +14822,7 @@ prt_q,156,324,6	script	Chief Guard#EP161PG	4_EP16_SPIEGEL,{
 		erasequest 5468;// Mad Love for Wife(6)
 		setquest 5452;// [Stand by]Request from Chief Guard
 		getexp 800000,250000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Chief Guard Spiegel]";
 		mes "Since we are in a difficult situation, we cannot offer you anything too spectacular, but this is the rewards for you prepared by the Guards.";
 		close;
@@ -16811,7 +16811,7 @@ prt_pri00,51,116,8	script	Ellond Lawrence#EP161ER	4_M_CRU,1,1,{
 			setquest 5424;// [Complete]Restricted Sector
 			completequest 5424;// [Complete]Restricted Sector
 			getexp 2100000,5500000;
-			getitem 6919,2;// TokenOfHonor
+			getitem 6919,20;// TokenOfHonor
 			mes "[Ellond Lawrence]";
 			mes "Now that you received the special reward money, please keep up the good work.";
 			close;
@@ -17068,7 +17068,7 @@ prt_prison,243,265,6	script	Prisoner 243AD265#EP161A	4_M_DRAKE,{
 		completequest 5425;// To My Beloved Fellow
 		setquest 5426;// [Stand by]To My Beloved Fellow
 		getexp 700000,500000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Prisoner 243AD265]";
 		mes "I'll inscribe your name right here. I hope you would continue to be the messenger for my fellow men.";
 		close;
@@ -17107,7 +17107,7 @@ prt_prison,243,265,6	script	Prisoner 243AD265#EP161A	4_M_DRAKE,{
 			erasequest 5427;// [Repeat]To My Beloved Fellow
 			setquest 5426;// [Stand by]To My Beloved Fellow
 			getexp 700000,500000;
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			mes "[Prisoner 243AD265]";
 			mes "I'll inscribe your name right here. I hope you would continue to be the messenger for my fellow men.";
 			close;
@@ -17446,7 +17446,7 @@ prt_prison,267,184,8	script	Prisoner 267BD184#EP161B	4_DRACULA,{
 		delitem 6924,20;// Red_Eyes
 		setquest 5429;// [Stand by]Lowly Standards
 		getexp 700000,500000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Prisoner 267BD184]";
 		mes "Humans who had been here before gave me this. I don't like this kind of design, so I'll give it to you.";
 		close;
@@ -17488,7 +17488,7 @@ prt_prison,267,184,8	script	Prisoner 267BD184#EP161B	4_DRACULA,{
 			delitem 6924,20;// Red_Eyes
 			setquest 5429;// [Stand by]Lowly Standards
 			getexp 700000,500000;
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			mes "[Prisoner 267BD184]";
 			mes "Oh, I almost forgot. This is the thing I talked to you the last time. I don't like this kind of design, so I'll give it to you.";
 			close;
@@ -17605,7 +17605,7 @@ prt_prison,265,154,4	script	Prisoner 265CM154#EP161C	4_MOONLIGHT,{
 		erasequest 5432;// Cleaning is complete.
 		setquest 5433;// [Stand by]Clean Life
 		getexp 700000,500000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Prisoner 265CM154]";
 		mes "If you come back again tomorrow and give me a hand, there will be more of this. Come back often!";
 		close;
@@ -17645,7 +17645,7 @@ prt_prison,265,154,4	script	Prisoner 265CM154#EP161C	4_MOONLIGHT,{
 			erasequest 5435;// [Repeat]Cleaning is complete.
 			setquest 5433;// [Stand by]Clean Life
 			getexp 700000,500000;
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			mes "[Prisoner 265CM154]";
 			mes "Now that you finished cleaning for today, let me give you this. Come back tomorrow!";
 			close;
@@ -17935,7 +17935,7 @@ prt_prison,95,72,6	script	Prisoner 95EB72#EP161E	4_BAPHOMET,{
 		setquest 5437;// [Stand by]Finding Lights
 		delitem 6923,1;// Bright_Lights
 		getexp 700000,500000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Prisoner 95EB72]";
 		mes "I promise you a lot more rewards the day when I stand tall in the world again.";
 		close;
@@ -17970,7 +17970,7 @@ prt_prison,95,72,6	script	Prisoner 95EB72#EP161E	4_BAPHOMET,{
 			setquest 5437;// [Stand by]Finding Lights
 			delitem 6923,1;// Bright_Lights
 			getexp 700000,500000;
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			mes "[Prisoner 95EB72]";
 			mes "Keep this in mind. I promise you a lot more rewards the day when I stand tall in the world again.";
 			close;
@@ -18150,7 +18150,7 @@ prt_prison,117,188,4	script	Prisoner 117FM188#EP161F	4_MISTRESS,{
 		completequest 5439;// Refreshing Prison Life
 		setquest 5440;// [Stand by]Refreshing Prison Life
 		getexp 700000,500000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Prisoner 117FM188]";
 		mes "It's nothing. I don't need it so you take and use it.";
 		close;
@@ -18190,7 +18190,7 @@ prt_prison,117,188,4	script	Prisoner 117FM188#EP161F	4_MISTRESS,{
 			erasequest 5441;// [Repeat]Refreshing Prison Life
 			setquest 5440;// [Stand by]Refreshing Prison Life
 			getexp 700000,500000;
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			mes "[Prisoner 117FM188]";
 			mes "You did a good job getting the humidifier, Noyel.";
 			close;
@@ -18358,7 +18358,7 @@ prt_prison,103,214,4	script	Prisoner 103GD214#EP161G	4_DARKLORD,{
 		completequest 5442;// Suppressing Darkness
 		setquest 5443;// [Stand by]Suppressing Darkness
 		getexp 700000,500000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Prisoner 103GD214]";
 		mes "~Grunts~ If you don't want to see my darkness drags down the whole world to ashes, you'd better come often and bring me flowers.";
 		close;
@@ -18413,7 +18413,7 @@ prt_prison,103,214,4	script	Prisoner 103GD214#EP161G	4_DARKLORD,{
 			erasequest 5444;// [Repeat]Suppressing Darkness
 			setquest 5443;// [Stand by]Suppressing Darkness
 			getexp 700000,500000;
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			specialeffect EF_HEALSP;
 			mes "[Prisoner 103GD214]";
 			mes "...It's working. Thank you, human. You've been a lot of help, too, this time.";
@@ -18509,7 +18509,7 @@ prt_prison,55,115,2	script	Prisoner 55HK115#EP161H	4_STORMKNIGHT,{
 		completequest 5445;// Bothersome Little Thing
 		setquest 5446;// [Stand by]Bothersome Little Thing
 		getexp 700000,500000;
-		getitem 6919,4;// TokenOfHonor
+		getitem 6919,40;// TokenOfHonor
 		mes "[Prisoner 55HK115]";
 		mes "What in the world are they taking so long? They're slow with poor service...I know my manners as knight so I can't just pick a fight. Alright. Just take this tip.";
 		next;
@@ -18555,7 +18555,7 @@ prt_prison,55,115,2	script	Prisoner 55HK115#EP161H	4_STORMKNIGHT,{
 			erasequest 5447;// [Repeat]Bothersome Little Thing
 			setquest 5446;// [Stand by]Bothersome Little Thing
 			getexp 700000,500000;
-			getitem 6919,4;// TokenOfHonor
+			getitem 6919,40;// TokenOfHonor
 			mes "[Prisoner 55HK115]";
 			mes "This time, the service is acceptable.";
 			next;

@@ -531,7 +531,7 @@ payon_in03,33,95,3	script	Muyeon#ill_moon_pin	4_F_TAEKWON,{
 		mes "Thank you so much adventurer.";
 		illusion_moonlight = 9;
 		completequest 7788;
-		getitem 25271,5;
+		getitem 25271,50;
 		getexp 500000,500000;
 		close;
 	}
@@ -844,7 +844,7 @@ pay_d03_i,149,45,4	script	Scholar Chunghae#ill_moon_ind	4_F_03,{
 			mes "I hope we can find an answer to this phenomenon.";
 			erasequest 7782;
 			setquest 7783;
-			getitem 25271,1;
+			getitem 25271,10;
 			getexp 300000,300000;
 			close;
 	}
@@ -886,7 +886,7 @@ pay_d03_i,152,45,4	script	Soldier Junghee#ill_moon_ind	4_M_PAY_SOLDIER,{
 		mes "Chunghae's almost done investigating this place. I'd better get ready to leave.";
 		erasequest 7784;
 		setquest 7785;
-		getitem 25271,1;
+		getitem 25271,10;
 		close;
 	}
 	if (checkquest(7786,HUNTING)  == 2) {
@@ -899,7 +899,7 @@ pay_d03_i,152,45,4	script	Soldier Junghee#ill_moon_ind	4_M_PAY_SOLDIER,{
 		mes "Thank you for helping them rest.";
 		erasequest 7786;
 		setquest 7787;
-		getitem 25271,1;
+		getitem 25271,10;
 		close;
 	}
 	mes "[ Junghee ]";
@@ -1354,7 +1354,7 @@ gef_dun01,134,224,1	script	Mojo#ilgf	2_F_MAGICMASTER,{
 		erasequest 14679;	// Curious by Nature
 		setquest 14680;		// Time to Research
 		getexp 500000,500000;
-		getitem 25271,1;// Illusion Stone
+		getitem 25271,10;// Illusion Stone
 		close;
 	}
 	mes "[Mojo]";
@@ -1832,7 +1832,7 @@ gef_dun01,132,223,5	script	Grimm#ilgf	4_M_MINISTER,{
 		completequest 14666;// Warden's Role
 		getexp 2000000,2000000;
 		ill_vampire = 16;
-		getitem 25271,5;// Illusion Stone
+		getitem 25271,50;// Illusion Stone
 		close;
 	}
 	if (ill_vampire == 16) {
@@ -2107,7 +2107,7 @@ gef_d01_i,116,228,3	script	Antoine#ilgf01	4_GEFFEN_01,{
 		erasequest 14669;// Sweet Dreams
 		setquest 14670;// Time for Dreaming
 		getexp 500000,500000;
-		getitem 25271,1;// Illusion Stone
+		getitem 25271,10;// Illusion Stone
 		close;
 	}
 	mes "[Antoine]";
@@ -2388,7 +2388,7 @@ gef_d01_i,113,230,5	script	Gem#ilgf01	1_F_PRIEST,{
 		erasequest 14667;// Send the Dead Back to Earth
 		setquest 14668;// Get Some Rest
 		getexp 500000,500000;
-		getitem 25271,1;// Illusion Stone
+		getitem 25271,10;// Illusion Stone
 		close;
 	}
 	end;
@@ -3818,7 +3818,7 @@ gef_d01_i,81,135,5	script	Wizard#ilgf01	4_F_BOMI,5,5,{
 			erasequest 14671;// Unreliable Fake Blood
 			setquest 14674;// Time to Digest
 			getexp 500000,500000;
-			getitem 25271,1;// Illusion Stone
+			getitem 25271,10;// Illusion Stone
 			close;
 		}
 		mes "[Bomi]";
@@ -3828,7 +3828,7 @@ gef_d01_i,81,135,5	script	Wizard#ilgf01	4_F_BOMI,5,5,{
 		erasequest 14671;// Unreliable Fake Blood
 		setquest 14674;// Time to Digest
 		getexp 500000,500000;
-		getitem 25271,1;// Illusion Stone
+		getitem 25271,10;// Illusion Stone
 		if (mobcount("gef_d01_i", "ill_vampire_spawn_bomi::OnMobDead") < 1 && mobcount("gef_d01_i", "ill_vampire_spawn_dracula::OnMobDead") < 1) {
 			if (.bomi_count < 30)
 				.bomi_count++;
@@ -4258,7 +4258,7 @@ gef_d01_i,185,97,5	script	King#ilgf01	4_NFBAT,{
 		erasequest 14675;// Noisy Neighbors
 		setquest 14676;// Break Time
 		getexp 500000,500000;
-		getitem 25271,1;// Illusion Stone
+		getitem 25271,10;// Illusion Stone
 		close;
 	}
 	mes "[King]";
@@ -4532,7 +4532,7 @@ gef_d01_i,191,96,3	script	Wizard#ilgf02	4_M_JOB_WIZARD,5,5,{
 		erasequest 14677;// Studying in Dim Light
 		setquest 14678;// Time to Study
 		getexp 500000,500000;
-		getitem 25271,1;// Illusion Stone
+		getitem 25271,10;// Illusion Stone
 		close;
 	}
 	end;
@@ -5404,7 +5404,7 @@ ice_d03_i,155,43,3	script(CLOAKED)	Zeith#frozen02	4_M_GUILLOTINE,{
 		erasequest 15113;// Direct Approach
 		setquest 15115;// Vrid and Zeith
 		getexp 1200000,1200000;
-		getitem 25271,3;	// IllusionStone
+		getitem 25271,30;	// IllusionStone
 		cloakonnpcself( "Vrid#frozen02" );
 		cloakonnpcself( "Zeith#frozen02" );
 		close;
@@ -6181,7 +6181,7 @@ tur_d03_i,139,186,3	script	Girl#illtur01	4_F_NARIN,{
 		ill_turtle = 11;
 		erasequest 16117;	// Continuous story 2
 		setquest 16105;	// A short break, and a promise
-		getitem 25271,5;	// IllusionStone
+		getitem 25271,50;	// IllusionStone
 		getexp 2880000,1920000;
 		close2;
 		npctalk "Archeologist Leiphen : Okay, see you again!", "Archeologist Leiphen#illtur01", bc_self;
@@ -6295,7 +6295,7 @@ tur_d03_i,139,186,3	script	Girl#illtur01	4_F_NARIN,{
 		erasequest 16106;	// A memory that should not be forgotten 1
 		erasequest 16107;	// A memory that should not be forgotten 2
 		setquest 16108;	// A memory that should not be forgotten - Cooldown
-		getitem 25271,1;	// IllusionStone
+		getitem 25271,10;	// IllusionStone
 		getexp 1200000,1000000;
 		close2;
 		cloakonnpcself( "Archeologist Leiphen#illtur01" );
@@ -6538,7 +6538,7 @@ tur_d03_i,235,187,7	script	Susceptible Soldier#	4_M_KEEN_SOLDIER,{
 			delitem 25316,5;	// Shabby_Metal_Chip
 			erasequest 16109;	// Vain Desire
 			setquest 16110;	// Vain Desire - Cooldown
-			getitem 25271,1;	// IllusionStone
+			getitem 25271,10;	// IllusionStone
 			getexp 1200000,1000000;
 			close;
 		}
@@ -6908,7 +6908,7 @@ tur_d04_i,96,112,1	script	Fragile Woman#illtur	4_F_SLOPPY_WOMAN,{
 			erasequest 16111;	// Endless Hunger 1
 			erasequest 16112;	// Endless Hunger 2
 			setquest 16113;	// Endless Hunger - Cooldown
-			getitem 25271,1;	// IllusionStone
+			getitem 25271,10;	// IllusionStone
 			getexp 1200000,1000000;
 			close;
 		}
@@ -9442,7 +9442,7 @@ iz_d04_i,127,228,4	script	Jerrymon#jerry3	1_M_01,{
 			mes "[Jerrymon]";
 			mes "Then be careful!";
 			close2;
-			getitem 25271,2;	// IllusionStone
+			getitem 25271,20;	// IllusionStone
 			ill_underwater = 6;
 			erasequest 3411;
 			setquest 3412;
@@ -9495,7 +9495,7 @@ iz_d04_i,127,228,4	script	Jerrymon#jerry3	1_M_01,{
 		erasequest 3412;
 		if (isbegin_quest(3410) == 1)
 			erasequest 3410;
-		getitem 25271,2;	// IllusionStone
+		getitem 25271,20;	// IllusionStone
 		getexp 4441860,3109150;
 		warp "izlude",128,54;
 		end;
@@ -9634,7 +9634,7 @@ iz_d04_i,127,228,4	script	Jerrymon#jerry3	1_M_01,{
 				getexp 4441860,3109150;
 				erasequest 3413;
 				setquest 3414;
-				getitem 25271,1;	// IllusionStone
+				getitem 25271,10;	// IllusionStone
 				end;
 			case 2:
 				end;
@@ -9673,7 +9673,7 @@ iz_d04_i,127,228,4	script	Jerrymon#jerry3	1_M_01,{
 				mes "[Jerrymon]";
 				mes "I'll get back to you if I need help. Thanks!!";
 				close2;
-				getitem 25271,1;	// IllusionStone
+				getitem 25271,10;	// IllusionStone
 				getexp 4441860,3109150;
 				erasequest 3415;
 				setquest 3416;
@@ -9989,7 +9989,7 @@ iz_d05_i,138,186,5	script	Kena#Kena	4_M_02,{
 			mes "[Kena]";
 			mes "If you have time, please come back tomorrow. I'll be waiting for you.";
 			close2;
-			getitem 25271,1;	// IllusionStone
+			getitem 25271,10;	// IllusionStone
 			getexp 20107500,14075250;
 			erasequest 3417;
 			setquest 3418;
@@ -10031,7 +10031,7 @@ iz_d05_i,138,186,5	script	Kena#Kena	4_M_02,{
 			mes "[Kena]";
 			mes "Please drop by tomorrow when the time is right. I'll be waiting for you.";
 			close2;
-			getitem 25271,1;	// IllusionStone
+			getitem 25271,10;	// IllusionStone
 			getexp 20107500,14075250;
 			setquest 3420;
 			erasequest 3419;
@@ -10771,7 +10771,7 @@ anthell02,177,190,3	script	Mirko#1F	4_M_SAGE_A,{
 		completequest 8730;
 		getexp 5260084,2000000;
 		getexp 2104033,600000;
-		getitem 25271,5;	// IllusionStone
+		getitem 25271,50;	// IllusionStone
 		close;
 	}
 	mes "[Mirko]";
@@ -10826,7 +10826,7 @@ anthell02,177,190,3	script	Mirko#1F	4_M_SAGE_A,{
 		mes "[Mirko]";
 		mes "Good job!";
 		mes "Then I'll take care of you tomorrow too.";
-		getitem 25271,1;	// IllusionStone
+		getitem 25271,10;	// IllusionStone
 		getexp 3181074,2404545;
 		getexp 954322,721363;
 		close;
@@ -10871,7 +10871,7 @@ anthell02,177,190,3	script	Mirko#1F	4_M_SAGE_A,{
 		mes "[Mirko]";
 		mes "Good job!";
 		mes "Then I'll ask you again tomorrow.";
-		getitem 25271,1;	// IllusionStone
+		getitem 25271,10;	// IllusionStone
 		getexp 3151005,2395672;
 		getexp 945301,718701;
 		close;
@@ -10925,7 +10925,7 @@ anthell02,177,190,3	script	Mirko#1F	4_M_SAGE_A,{
 			mes "Then again, I'll take care of you tomorrow.";
 			erasequest 8735;
 			setquest 8736;
-			getitem 25271,1;	// IllusionStone
+			getitem 25271,10;	// IllusionStone
 			getexp 6483984,4821986;
 			getexp 1945195,1446595;
 			close;
@@ -10972,7 +10972,7 @@ anthell02,177,190,3	script	Mirko#1F	4_M_SAGE_A,{
 		mes "[Mirko]";
 		mes "Good job!";
 		mes "Then I'll take care of you tomorrow too.";
-		getitem 25271,1;	// IllusionStone
+		getitem 25271,10;	// IllusionStone
 		getexp 3113916,2347020;
 		getexp 934174,704106;
 		close;
@@ -11830,7 +11830,7 @@ einbroch,149,242,5	script	Coughing young man#ITB	4_M_NFMAN,3,3,{
 		mes "Why haven't you come back yet...";
 		mes "Cough Cough!!";
 		next;
-		mes "^ff0000¡Ø You can start this quest from level 150.^000000";
+		mes "^ff0000ï¿½ï¿½ You can start this quest from level 150.^000000";
 		close;
 	}
 	if (ill_teddy == 0) {
@@ -12305,7 +12305,7 @@ ein_d02_i,170,193,5	script	Steven#IBT	4W_M_02,3,3,{
 		ill_teddy = 9;
 		erasequest 11563;
 		erasequest 11564;
-		getitem 25271,5; // IllusionStone
+		getitem 25271,50; // IllusionStone
 		getexp 3500000,2500000;
 		close2;
 		cloakonnpcself( "Acid#IBT_inN01" );
@@ -12363,7 +12363,7 @@ ein_d02_i,170,193,5	script	Steven#IBT	4W_M_02,3,3,{
 		mes "Are you feeling a little safer now?";
 		erasequest 11565;
 		setquest 11566;
-		getitem 25271,1; // IllusionStone
+		getitem 25271,10; // IllusionStone
 		getexp 1000000,900000;
 		close;
 	}
@@ -12702,7 +12702,7 @@ ein_d02_i,168,206,5	script	Gloomy Teddy Bear#ITB	4_TEDDY_BEAR_B_L,{
 			erasequest 11567;
 			erasequest 11568;
 			setquest 11569;
-			getitem 25271,1; // IllusionStone
+			getitem 25271,10; // IllusionStone
 			getexp 1300000,1000000;
 			close;
 		}
@@ -12781,7 +12781,7 @@ ein_d02_i,191,192,3	script	Porcelain Doll Craftsman#ITB	4_F_HUWOMAN,{
 		// unknown text
 		erasequest 11570;
 		setquest 11571;
-		getitem 25271,1; // IllusionStone
+		getitem 25271,10; // IllusionStone
 		getexp 1500000,1100000;
 		end;
 	}
