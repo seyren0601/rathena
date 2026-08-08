@@ -91,6 +91,9 @@ Body:
       breakguild: true
       channel: true
       langtype: true
+      cash: true
+      points: true
+      item: true
     Permissions:
       attendance: false
   - Id: 2
