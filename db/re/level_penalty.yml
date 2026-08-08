@@ -75,25 +75,3 @@ Body:
         Rate: 35
       - Difference: -31
         Rate: 10
-  - Type: Drop
-    LevelDifferences:
-      - Difference: 16
-        Rate: 50
-      - Difference: 13
-        Rate: 60
-      - Difference: 10
-        Rate: 70
-      - Difference: 7
-        Rate: 80
-      - Difference: 4
-        Rate: 90
-      - Difference: -4
-        Rate: 90
-      - Difference: -7
-        Rate: 80
-      - Difference: -10
-        Rate: 70
-      - Difference: -13
-        Rate: 60
-      - Difference: -16
-        Rate: 50
