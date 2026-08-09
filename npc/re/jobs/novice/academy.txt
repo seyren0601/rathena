@@ -387,7 +387,7 @@ int_land04,58,69,5	duplicate(Sailor#intro_npc04)	Sailor#intro_npc04_04	4W_SAILOR
 // -----------------------------------------------------------------------------
 izlude,198,213,3	script	Captain Carocc#iz	4_M_REINDEER,5,5,{
 	cutin "fly_trock.bmp", 2;
-	if (Class == Job_Novice && BaseLevel < 15) {
+	if (Class == Job_Novice) {
 		if (isbegin_quest(4269) == 2) {
 			if (isbegin_quest(7471) == 2 || isbegin_quest(7472) > 0) {
 				mes "[Carocc]";
@@ -812,7 +812,7 @@ izlude,122,207,3	script	Criatura Academy Staff#0	4_M_KHKYEL,3,3,{
 		close;
 	}
 	viewpoint 2,122,207,1,0xFFFFFF;
-	if (Class == Job_Novice && BaseLevel < 15) {
+	if (Class == Job_Novice) {
 		if (isbegin_quest(7472) == 1) {
 			mes "[Hun]";
 			mes "Oh.. you must be the adventurer Carocc was talking about.";
