@@ -583,3 +583,11 @@ Body:
       Map: 1@exsh
       X: 90
       Y: 35
+  - Id: 80
+    Name: Edda Bio
+    Enter:
+      Map: 1@gol1
+      X: 196
+      Y: 32
+    AdditionalMaps:
+      1@gol2: true
