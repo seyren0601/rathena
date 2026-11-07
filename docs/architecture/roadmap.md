@@ -22,7 +22,7 @@ Phases are ordered so that each builds on the previous one. "Depends on" lists t
 | 4 | `gameplay/combat-system.md` | `battle_calc_attack` pipeline, weapon/magic/misc, renewal vs pre-re formulas, element/size/race modifiers, damage display | skill |
 | 4 | `gameplay/item-system.md` | `item_data`, inventory/cart/storage, equip flow, bonuses, combos, random options, refine/enchant/reform, cash shop | status |
 | 4 | `gameplay/monster-system.md` | `mob_db`, spawns (`npc_parse_mob`), AI state machine, mob skills, drops, MVP, summons | combat |
-| 5 – Social/economy | `gameplay/social-systems.md` | party, guild/WoE, clan, chat, channels, friends, duel | inter-server |
+| **5 – Social/economy** ✅ | `gameplay/social-systems.md` | party, guild/WoE, clan, chat, channels, friends, duel | inter-server |
 | 5 | `gameplay/economy-systems.md` | trade, storage, vending, buying/search store, mail/RoDEX, auction, barter/market | item |
 | 5 | `gameplay/companions.md` | pet, homunculus, mercenary, elemental | status, unit |
 | 5 | `gameplay/content-systems.md` | quests, achievements, instances, battlegrounds, attendance, reputation | npc |
@@ -56,13 +56,13 @@ A subsystem is only ticked **complete** when its data structures, main execution
 - [x] Combat system
 - [x] Item system
 - [x] Monster system
-- [ ] Social systems
-- [ ] Economy systems
-- [ ] Companions
-- [ ] Content systems
-- [ ] Inter-server
-- [ ] Login & char server internals
-- [ ] Web server
+- [x] Social systems
+- [x] Economy systems
+- [x] Companions
+- [x] Content systems
+- [x] Inter-server
+- [x] Login & char server internals
+- [x] Web server
 - [ ] Customization guide
 - [ ] Glossary
 - [ ] Fork notes
@@ -82,12 +82,12 @@ These are open questions found during discovery — each will be resolved (or ex
 6. ✅ *Resolved (networking.md §6)*: Full **client handshake** with exact packet IDs per `PACKETVER 20220406`, including pincode (disabled in this fork via `char_athena.conf`) and the char→map redirect. *(phase 2)*
 7. ✅ *Resolved (packet-system.md §2-4)*: **Packet versioning** — how `clif_packetdb.hpp` (#if chains), `packets_struct.hpp`, `packets.hpp` (typed structs) and `clif_shuffle.hpp` combine; which coding style new packets should follow. *(phase 2)*
 8. ✅ *Resolved (packet-system.md §5: keys are 0 → inactive)*: **Obfuscation keys** for this client date (`clif_obfuscation.hpp`) and whether obfuscation is active. *(phase 2)*
-9. ✅ *Partly resolved (map-and-movement.md §6: pc_setpos → chrif_changemapserver flow; multi-server ops still open)*: **Map-server change** across servers (`chrif_changemapserver`) and multi-map-server deployments. *(phase 5)*
+9. ✅ *Resolved (map-and-movement.md §6, inter-server.md §4/§6: map lists exchanged at connect, auth_node with changing_mapservers, link-drop handling)*: **Map-server change** across servers (`chrif_changemapserver`) and multi-map-server deployments. *(phase 5)*
 
 ### Data & persistence
 10. ✅ *Resolved (database-architecture.md §6)*: **Save cadence & consistency** — autosave interval, `save_settings` flags, what is saved on which event, crash-loss window. *(phase 2)*
 11. ✅ *Resolved (database-architecture.md §3: one FK, mostly MyISAM)*: **Schema relationships** across the 56 `main.sql` tables (no foreign keys are expected ⚠️). *(phase 2)*
-12. Which tables map writes **directly** (mapreg, vending, buyingstore, market, barter, logs) and multi-map safety. *(phase 2/5)*
+12. ✅ *Resolved (economy-systems.md §2: vendings/vending_items, buyingstores/buyingstore_items, market, barter via `mmysql_handle`; plus mapreg/logs)*: Which tables map writes **directly** (mapreg, vending, buyingstore, market, barter, logs) and multi-map safety. *(phase 2/5)*
 
 ### Scripting
 13. ✅ *Resolved (scripting-engine.md §3-4)*: Script **bytecode format** and parser stages; how `RERUNLINE`/sleep/`menu` suspend and resume `script_state`. *(phase 3)*
@@ -109,7 +109,7 @@ These are open questions found during discovery — each will be resolved (or ex
 28. ✅ *Resolved (scripting-engine.md §11: `npc_event_dequeue` frees `sd->st` in `map_quit`)*: Scripts paused across logout (`script_state` lifetime). *(phase 3)*
 
 ### New questions raised in phase 3
-29. `do_init_npc`'s exact post-load order compared with `npc_reload`'s. *(phase 5)*
+29. *(still open; moved to phase 6)* `do_init_npc`'s exact post-load order compared with `npc_reload`'s. *(phase 5)*
 30. ✅ *Partly resolved (item-system.md §5: item, combo, random option, SC, pet bonus scripts)*: Which other YAML DBs compile script fields (combos, random options, pets, item packages…) and when they run. *(phase 4: item-system)*
 31. `bonus_script` / `autobonus` runtime compilation and the lifetime of their `script_code`. *(phase 4)*
 
@@ -122,6 +122,14 @@ These are open questions found during discovery — each will be resolved (or ex
 35. Item `Delay` / cooldown storage and persistence (`pc_itemcd_do`). *(phase 5)*
 36. Exact `delay_consume` flow for scroll-type items (consumed after the skill finishes). *(phase 5)*
 37. Pre-renewal code paths are not documented in depth; this fork builds Renewal. *(only if needed)*
+
+### New questions raised in phase 5
+38. Friend online/offline notifications only reach players on the **same map-server** (`map_foreachpc`, `clif.cpp:10977`, `unit.cpp:3978`). Is that acceptable for multi-map deployments? *(only if multi-map)*
+39. Inter requests sent while map↔char is down are dropped (`CheckForCharServer`). Party/guild chat and changes during an outage are lost. *(ops note)*
+40. **Web-server `*_load` routes are unauthenticated** (`charconfig_load`, `userconfig_load`, `merchantstore_load`; auth commented out upstream). Firewall port 8888 or re-enable the check. *(security, fork-notes)*
+41. **Passwords stored in plaintext** (`use_MD5_passwords: no`, `conf/login_athena.conf:118`). Decide on hashing before production. *(security, fork-notes)*
+42. Web-server serializes all SQL through one global mutex (`sqllock.cpp:10`). Measure if the web load grows. *(perf)*
+43. Guild exp is cached on the map for up to 10 s (`GUILD_PAYEXP_INTERVAL`), so it can be lost on a map crash. *(ops note)*
 
 ### Fork-specific
 21. ✅ *Resolved (item-system.md §1, monster-system.md §5, npc-system.md §5.2: every created item is identified; Identify skill and OnPCIdentifyEvent effectively unused)*: Impact of `itemdb_isidentified` always returning `1` on other code paths (e.g. appraisal items, identify skill, NPC checks). *(fork notes)*

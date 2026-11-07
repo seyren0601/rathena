@@ -46,7 +46,13 @@ The phase 2 core documents, best read in this order: [startup-and-initialization
 | [gameplay/combat-system.md](gameplay/combat-system.md) | ✅ Phase 4 |
 | [gameplay/item-system.md](gameplay/item-system.md) | ✅ Phase 4 |
 | [gameplay/monster-system.md](gameplay/monster-system.md) | ✅ Phase 4 |
-| social / economy / companions / content / inter-server / web | ⏳ phase 5 |
+| [gameplay/social-systems.md](gameplay/social-systems.md) | ✅ Phase 5 |
+| [gameplay/economy-systems.md](gameplay/economy-systems.md) | ✅ Phase 5 |
+| [gameplay/companions.md](gameplay/companions.md) | ✅ Phase 5 |
+| [gameplay/content-systems.md](gameplay/content-systems.md) | ✅ Phase 5 |
+| [inter-server.md](inter-server.md) | ✅ Phase 5 |
+| [login-and-char-servers.md](login-and-char-servers.md) | ✅ Phase 5 |
+| [web-server.md](web-server.md) | ✅ Phase 5 |
 | customization-guide.md / glossary.md / fork-notes.md | ⏳ planned |
 
 ## Key facts at a glance

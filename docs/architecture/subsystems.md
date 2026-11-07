@@ -24,21 +24,21 @@
 
 | # | Subsystem | Anchor | Depth |
 |---|---|---|---|
-| B1 | Client auth (raw/MD5/SSO/OTP) | `logclif_parse_reqauth_raw/md5/sso`, `logclif_parse_otp_login` (`loginclif.cpp:266-475`) | D2 |
+| B1 | Client auth (raw/MD5/SSO/OTP) | `logclif_parse_reqauth_raw/md5/sso`, `logclif_parse_otp_login` (`loginclif.cpp:266-475`) | D3 |
 | B2 | Account engine | `account_db_sql` (`account.cpp`) — vtable-style C struct (`accounts->init(...)`) | D0 |
-| B3 | Char-server registry & auth nodes | `logclif_parse_reqcharconnec`, `logchrif_parse_reqauth` | D1 |
-| B4 | IP ban / login log | `ipban.cpp`, `loginlog.cpp` | D0 |
+| B3 | Char-server registry & auth nodes | `logclif_parse_reqcharconnec`, `logchrif_parse_reqauth` | D3 |
+| B4 | IP ban / login log | `ipban.cpp`, `loginlog.cpp` | D2 |
 
 ## C. Char-server (`src/char`)
 
 | # | Subsystem | Anchor | Depth |
 |---|---|---|---|
-| C1 | Character select/create/delete/rename/pincode | `CharPacketDatabase`, `chclif_parse_*` | D1 |
+| C1 | Character select/create/delete/rename/pincode | `CharPacketDatabase`, `chclif_parse_*` | D3 |
 | C2 | Character persistence | `char_mmo_char_tosql`, `char_mmo_char_fromsql`, `char_memitemdata_to_sql` | D2 |
 | C3 | Map-server registry & map routing | `chmapif_parse`, `chclif_send_map_data` | D1 |
-| C4 | Inter relay | `inter_parse_frommap` + `int_party`, `int_guild`, `int_storage`, `int_mail`, `int_auction`, `int_pet`, `int_homun`, `int_mercenary`, `int_elemental`, `int_quest`, `int_achievement`, `int_clan` | D1 |
-| C5 | Account/char registry variables (`#`, `##` vars) | `mapif_parse_Registry` (`inter.cpp`) | D0 |
-| C6 | Fame lists, online tracking, timers | `char_read_fame_list`, `char_online_data_cleanup` | D0 |
+| C4 | Inter relay | `inter_parse_frommap` + `int_party`, `int_guild`, `int_storage`, `int_mail`, `int_auction`, `int_pet`, `int_homun`, `int_mercenary`, `int_elemental`, `int_quest`, `int_achievement`, `int_clan` | D3 |
+| C5 | Account/char registry variables (`#`, `##` vars) | `mapif_parse_Registry` (`inter.cpp`) | D3 |
+| C6 | Fame lists, online tracking, timers | `char_read_fame_list`, `char_online_data_cleanup` | D3 |
 
 ## D. Map-server: world and engine (`src/map`)
 
@@ -48,8 +48,8 @@
 | D2 | Unit state machine (move/attack/cast) | `unit.cpp` | `unit_data` (`unit.hpp:22`), `unit_walktoxy`, `unit_skilluse_id2` (`:2077`), `unit_attack_timer` | D3 |
 | D3 | Pathfinding / navigation | `path.cpp`, `navi.cpp` | `path_search` (`path.cpp:269`), `navi_create_lists` | D3 |
 | D4 | Client protocol | `clif.cpp`, `clif_packetdb.hpp`, `packets*.hpp` | `clif_parse`, `packet_db[]`, `clif_send` | D3 (protocol layer; individual handlers per gameplay doc) |
-| D5 | Char-server link | `chrif.cpp` | `chrif_parse`, `chrif_authreq`, `chrif_save` (`:277`) | D1 |
-| D6 | Inter relay link | `intif.cpp` | `intif_parse`, `intif_saveregistry` | D1 |
+| D5 | Char-server link | `chrif.cpp` | `chrif_parse`, `chrif_authreq`, `chrif_save` (`:277`) | D2 |
+| D6 | Inter relay link | `intif.cpp` | `intif_parse`, `intif_saveregistry` | D3 |
 | D7 | SQL logging | `log.cpp` | `log_config_read`, `log_pick_pc` (`log.cpp:261`), `log_zeny` (`:277`) | D0 |
 | D8 | GM commands | `atcommand.cpp`, `pc_groups.cpp`, `conf/groups.yml`, `conf/atcommands.yml` | `ACMD_DEF` (318 commands), `AtcommandAliasDatabase`, `PlayerGroupDatabase` | D0 |
 
@@ -70,25 +70,25 @@
 | E11 | Monsters & AI | `mob.cpp` | `mob_data` (`mob.hpp:337`), `MobDatabase`, `mob_spawn` (`:1117`), `mob_ai_sub_hard` (`:1841`), `mob_ai_hard`, `mob_dead` (`:2934`), `mob_once_spawn` (`:679`) | `mob_db.yml`, `mob_skill_db.txt`, `mob_summon.yml`, `mob_chat_db.yml`, `mob_item_ratio.yml`, `map_drops.yml`, `battle/monster.conf`, `battle/drops.conf` | D3 |
 | E12 | NPCs | `npc.cpp`, `npc_chat.cpp` | `npc_data`, `npc_parsesrcfile` (`:5646`), `npc_parse_script/warp/shop/mob/mapflag/function`, `npc_click` (`:2212`), `npc_event` (`:1794`), `npc_event_do_oninit` (`:1420`), `npc_reload` (`:6058`) | `npc/**`, `npc/barters.yml` (`npc.cpp:395`), `db/<mode>/stylist.yml` (`npc.cpp:127`) | D3 |
 | E13 | Script engine | `script.cpp`, `script_constants.hpp`, `mapreg.cpp` | `parse_script_` (`:2475`), `script_code` (`script.hpp:295`), `script_state` (`:316`), `run_script` (`:4186`), `run_script_main` (`:4376`), `buildin_func[]` (`:27928`, 676 `BUILDIN_DEF`s), `ConstantDatabase` | `db/const.yml`, `conf/script_athena.conf`, `doc/script_commands.txt` | D3 |
-| E14 | Party | `party.cpp`, char `int_party.cpp` | `party_create` (`:144`) | `battle/party.conf` | D0 |
-| E15 | Guild & WoE | `guild.cpp`, char `int_guild.cpp` | `guild_create` (`:689`), `CastleDatabase`, `GuildSkillTreeDatabase` | `castle_db.yml`, `guild_skill_tree.yml`, `exp_guild.yml`, `battle/guild.conf`, `npc/guild*/` | D0 |
-| E16 | Clan | `clan.cpp`, char `int_clan.cpp` | — | — | D0 |
-| E17 | Chat rooms / channels / duel | `chat.cpp`, `channel.cpp`, `duel.cpp` | — | `conf/channels.conf` | D0 |
-| E18 | Quests | `quest.cpp`, char `int_quest.cpp` | `QuestDatabase`, `quest_add` (`:590`) | `quest_db.yml` | D0 |
-| E19 | Achievements | `achievement.cpp`, char `int_achievement.cpp` | `AchievementDatabase`, `achievement_update_objective` (`:1090`) | `achievement_db.yml`, `achievement_level_db.yml` | D0 |
-| E20 | Trade | `trade.cpp` | `trade_traderequest` (`:31`) | — | D0 |
-| E21 | Storage (personal/guild/premium) | `storage.cpp`, char `int_storage.cpp` | `storage_storageopen` (`:133`), `InterServerDatabase` | `conf/inter_server.yml` | D0 |
-| E22 | Vending / buying store / search store | `vending.cpp`, `buyingstore.cpp`, `searchstore.cpp` | — | `battle/feature.conf` ⚠️ | D0 |
-| E23 | Cash shop / item mall | `cashshop.cpp`, `npc.cpp` cashshop NPC subtype | `CashShopDatabase` | `item_cash.yml` (**modified in fork**) | D0 |
-| E24 | Mail / auction / RoDEX | `mail.cpp`, char `int_mail.cpp`, `int_auction.cpp` | — | — | D0 |
-| E25 | Pets | `pet.cpp`, char `int_pet.cpp` | `PetDatabase` | `pet_db.yml`, `battle/pet.conf` | D0 |
-| E26 | Homunculus | `homunculus.cpp`, char `int_homun.cpp` | `HomunculusDatabase`, `hom_call` (`:1114`) | `homunculus_db.yml`, `exp_homun.yml`, `battle/homunc.conf` | D0 |
-| E27 | Mercenary | `mercenary.cpp`, char `int_mercenary.cpp` | `MercenaryDatabase` | `mercenary_db.yml` | D0 |
-| E28 | Elemental | `elemental.cpp`, char `int_elemental.cpp` | `ElementalDatabase` | `elemental_db.yml` | D0 |
-| E29 | Instances | `instance.cpp` | `InstanceDatabase`, `instance_create` (`:608`) | `instance_db.yml`, `battle/instance.conf`, `npc/instances/` | D0 |
-| E30 | Battlegrounds | `battleground.cpp` | `BattlegroundDatabase`, `bg_team_join` (`:523`) | `battleground_db.yml`, `battle/battleground.conf`, `npc/battleground/` | D0 |
+| E14 | Party | `party.cpp`, char `int_party.cpp` | `party_create` (`:144`) | `battle/party.conf` | D3 |
+| E15 | Guild & WoE | `guild.cpp`, char `int_guild.cpp` | `guild_create` (`:689`), `CastleDatabase`, `GuildSkillTreeDatabase` | `castle_db.yml`, `guild_skill_tree.yml`, `exp_guild.yml`, `battle/guild.conf`, `npc/guild*/` | D3 |
+| E16 | Clan | `clan.cpp`, char `int_clan.cpp` | — | — | D3 |
+| E17 | Chat rooms / channels / duel | `chat.cpp`, `channel.cpp`, `duel.cpp` | — | `conf/channels.conf` | D3 |
+| E18 | Quests | `quest.cpp`, char `int_quest.cpp` | `QuestDatabase`, `quest_add` (`:590`) | `quest_db.yml` | D3 |
+| E19 | Achievements | `achievement.cpp`, char `int_achievement.cpp` | `AchievementDatabase`, `achievement_update_objective` (`:1090`) | `achievement_db.yml`, `achievement_level_db.yml` | D3 |
+| E20 | Trade | `trade.cpp` | `trade_traderequest` (`:31`) | — | D3 |
+| E21 | Storage (personal/guild/premium) | `storage.cpp`, char `int_storage.cpp` | `storage_storageopen` (`:133`), `InterServerDatabase` | `conf/inter_server.yml` | D3 |
+| E22 | Vending / buying store / search store | `vending.cpp`, `buyingstore.cpp`, `searchstore.cpp` | — | `battle/feature.conf` ⚠️ | D3 |
+| E23 | Cash shop / item mall | `cashshop.cpp`, `npc.cpp` cashshop NPC subtype | `CashShopDatabase` | `item_cash.yml` (**modified in fork**) | D2 |
+| E24 | Mail / auction / RoDEX | `mail.cpp`, char `int_mail.cpp`, `int_auction.cpp` | — | — | D3 |
+| E25 | Pets | `pet.cpp`, char `int_pet.cpp` | `PetDatabase` | `pet_db.yml`, `battle/pet.conf` | D3 |
+| E26 | Homunculus | `homunculus.cpp`, char `int_homun.cpp` | `HomunculusDatabase`, `hom_call` (`:1114`) | `homunculus_db.yml`, `exp_homun.yml`, `battle/homunc.conf` | D3 |
+| E27 | Mercenary | `mercenary.cpp`, char `int_mercenary.cpp` | `MercenaryDatabase` | `mercenary_db.yml` | D3 |
+| E28 | Elemental | `elemental.cpp`, char `int_elemental.cpp` | `ElementalDatabase` | `elemental_db.yml` | D3 |
+| E29 | Instances | `instance.cpp` | `InstanceDatabase`, `instance_create` (`:608`) | `instance_db.yml`, `battle/instance.conf`, `npc/instances/` | D3 |
+| E30 | Battlegrounds | `battleground.cpp` | `BattlegroundDatabase`, `bg_team_join` (`:523`) | `battleground_db.yml`, `battle/battleground.conf`, `npc/battleground/` | D3 |
 | E31 | Experience, penalties, rates | `pc.cpp`, `mob.cpp` | `PenaltyDatabase` | `level_penalty.yml` (**emptied in fork**), `battle/exp.conf`, `battle/drops.conf` | D2 |
-| E32 | Attendance / reputation / captcha / stylist / barter | `pc.cpp`, `npc.cpp` | `AttendanceDatabase`, `ReputationDatabase`, `CaptchaDatabase`, `StylistDatabase`, `BarterDatabase` | `attendance.yml`, `reputation*.yml`, `captcha_db.yml`, `npc/barters.yml` | D0 |
+| E32 | Attendance / reputation / captcha / stylist / barter | `pc.cpp`, `npc.cpp` | `AttendanceDatabase`, `ReputationDatabase`, `CaptchaDatabase`, `StylistDatabase`, `BarterDatabase` | `attendance.yml`, `reputation*.yml`, `captcha_db.yml`, `npc/barters.yml` | D2 |
 | E33 | Global map variables (`$var`) | `mapreg.cpp` | `mapreg` table, `mapreg_dirty` flag | `sql: mapreg` | D2 |
 | E34 | Gameplay events (OnInit, OnPC*, OnClock, WoE timers) | `npc.cpp`, `script.cpp` | `npc_event_doall` (`npc.cpp:1322`), `npc_event_do_clock` timer (`npc.cpp:1368`) | `doc/woe_time_explanation.txt` | D2 |
 | E35 | Navigation generator | `navi.cpp`, `MAP_GENERATOR` | `navi_create_lists` | `tools/navi.py` | D0 |
@@ -97,9 +97,9 @@
 
 | # | Subsystem | Anchor | Depth |
 |---|---|---|---|
-| F1 | HTTP routing / threading | `WebServer::initialize`, httplib `Post(...)` routes | D1 |
-| F2 | Auth | `auth.cpp` | D0 |
-| F3 | Controllers | `charconfig`, `userconfig`, `emblem`, `merchantstore`, `partybooking` | D0 |
+| F1 | HTTP routing / threading | `WebServer::initialize`, httplib `Post(...)` routes | D3 |
+| F2 | Auth | `auth.cpp` | D3 |
+| F3 | Controllers | `charconfig`, `userconfig`, `emblem`, `merchantstore`, `partybooking` | D3 |
 
 ## YAML database classes
 
