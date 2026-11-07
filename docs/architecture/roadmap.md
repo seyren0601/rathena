@@ -16,7 +16,7 @@ Phases are ordered so that each builds on the previous one. "Depends on" lists t
 | **3 – Engine** ✅ | `scripting-engine.md` | Lexer/parser, bytecode (`c_op`), stack VM, variables & scopes, `buildin_func` registration, sleep/`RERUNLINE`, script ↔ C++ bridge, adding a command; trace one NPC end-to-end | database |
 | 3 | `gameplay/map-and-movement.md` | `map_data`, cells, block grid, `unit_walktoxy` → path → timers → `clif_move`, warping (`pc_setpos`, cross-server map change), mapflags | networking |
 | 3 | `gameplay/npc-system.md` | NPC file parsing, NPC types, events (`OnInit`, `OnPC*`, `OnClock`, `OnTouch`), dialog flow, duplicates, reload | scripting |
-| 4 – Gameplay | `gameplay/character-system.md` | `map_session_data`, auth/load/save, jobs, stat points, exp, registry vars | database |
+| **4 – Gameplay** ✅ | `gameplay/character-system.md` | `map_session_data`, auth/load/save, jobs, stat points, exp, registry vars | database |
 | 4 | `gameplay/status-system.md` | `status_calc_*` pipeline, `status_change` DB & lifecycle, SC flags, icons | character |
 | 4 | `gameplay/skill-system.md` | `skill_db.yml` → `s_skill_db`, cast flow (`unit_skilluse_id2` → `skill_castend_*` → `skill_attack`), requirements, units/ground skills, `SkillImpl` migration | status |
 | 4 | `gameplay/combat-system.md` | `battle_calc_attack` pipeline, weapon/magic/misc, renewal vs pre-re formulas, element/size/race modifiers, damage display | skill |
@@ -50,12 +50,12 @@ A subsystem is only ticked **complete** when its data structures, main execution
 - [x] Scripting engine
 - [x] Map & movement
 - [x] NPC system
-- [ ] Character system
-- [ ] Status system
-- [ ] Skill system
-- [ ] Combat system
-- [ ] Item system
-- [ ] Monster system
+- [x] Character system
+- [x] Status system
+- [x] Skill system
+- [x] Combat system
+- [x] Item system
+- [x] Monster system
 - [ ] Social systems
 - [ ] Economy systems
 - [ ] Companions
@@ -95,10 +95,10 @@ These are open questions found during discovery — each will be resolved (or ex
 15. ✅ *Resolved (scripting-engine.md §3.1)*: `script_constants.hpp` export mechanism and `db/const.yml`. *(phase 3)*
 
 ### Gameplay
-16. **SkillImpl migration status** — which skills still use legacy switches; how `calculateSkillRatio` interacts with `battle_calc_skillratio`. *(phase 4)*
-17. `status_calc_pc_` full pipeline order (base → job → equipment → item scripts → cards → SC), and `status_calc_bl_` dirty-flag (`SCB_*`) mechanism. *(phase 4)*
+16. ✅ *Resolved (skill-system.md §3.3: 10/70/13/9 legacy cases left)*: **SkillImpl migration status** — which skills still use legacy switches; how `calculateSkillRatio` interacts with `battle_calc_skillratio`. *(phase 4)*
+17. ✅ *Resolved (status-system.md §3)*: `status_calc_pc_` full pipeline order (base → job → equipment → item scripts → cards → SC), and `status_calc_bl_` dirty-flag (`SCB_*`) mechanism. *(phase 4)*
 18. Renewal-specific code paths: ✅ there are 334 `#ifdef RENEWAL` occurrences across `src/map/*.cpp`, not counting `#ifndef`/`#if defined` variants. Which mechanics they switch still needs to be catalogued. *(phase 4)*
-19. Mob AI: lazy vs hard AI split, mob skill conditions (`mob_skill_db.txt` still TXT). *(phase 4)*
+19. ✅ *Resolved (monster-system.md §4)*: Mob AI: lazy vs hard AI split, mob skill conditions (`mob_skill_db.txt` still TXT). *(phase 4)*
 20. Remaining **legacy TXT databases** (`skill_damage_db`, `produce_db`, `skill_nocast_db`, `item_noequip`, `job_noenter_map`, `mob_skill_db`, `status_disabled`, `skill_changematerial_db`) — loader locations. *(phase 4)*
 
 ### New questions raised in phase 2
@@ -110,14 +110,20 @@ These are open questions found during discovery — each will be resolved (or ex
 
 ### New questions raised in phase 3
 29. `do_init_npc`'s exact post-load order compared with `npc_reload`'s. *(phase 5)*
-30. Which other YAML DBs compile script fields (combos, random options, pets, item packages…) and when they run. *(phase 4: item-system)*
+30. ✅ *Partly resolved (item-system.md §5: item, combo, random option, SC, pet bonus scripts)*: Which other YAML DBs compile script fields (combos, random options, pets, item packages…) and when they run. *(phase 4: item-system)*
 31. `bonus_script` / `autobonus` runtime compilation and the lifetime of their `script_code`. *(phase 4)*
 
 ### New questions raised in the map-and-movement pass
 32. How hidden units (cloaking, GM hide, Chase Walk) are filtered in `clif_insight` and `clif_getareachar_unit`. *(phase 4: status-system)*
 33. How `CELL_NOSTACK` and `custom_cell_stack_limit` are used, and whether they are enabled in any build. *(phase 4)*
 
+### New questions raised in phase 4
+34. `TypesafeCachedYamlDatabase::find` key/index mismatch for `SkillDatabase` (item 27). Still open. *(phase 5 audit)*
+35. Item `Delay` / cooldown storage and persistence (`pc_itemcd_do`). *(phase 5)*
+36. Exact `delay_consume` flow for scroll-type items (consumed after the skill finishes). *(phase 5)*
+37. Pre-renewal code paths are not documented in depth; this fork builds Renewal. *(only if needed)*
+
 ### Fork-specific
-21. Impact of `itemdb_isidentified` always returning `1` on other code paths (e.g. appraisal items, identify skill, NPC checks). *(fork notes)*
+21. ✅ *Resolved (item-system.md §1, monster-system.md §5, npc-system.md §5.2: every created item is identified; Identify skill and OnPCIdentifyEvent effectively unused)*: Impact of `itemdb_isidentified` always returning `1` on other code paths (e.g. appraisal items, identify skill, NPC checks). *(fork notes)*
 22. `PACKETVER` define placed outside the include guard in `src/custom/defines_pre.hpp` — harmless today but worth normalising. *(fork notes)*
 23. ✅ *Partly resolved (memory-management.md §1: the int16 index type is inherited from upstream)*: The changes in `src/common/malloc.cpp` (refactor) — confirm behaviour parity with upstream. *(fork notes)*
