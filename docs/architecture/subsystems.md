@@ -8,14 +8,14 @@
 
 | # | Subsystem | Files | Anchor symbols | Depth |
 |---|---|---|---|---|
-| A1 | Process lifecycle | `core.cpp` | `Core::start`, `e_core_status`, `main_core<T>` | D2 |
-| A2 | Timer scheduler | `timer.cpp` | `add_timer`, `add_timer_interval`, `do_timer`, `TIMER_FUNC` | D1 |
-| A3 | Sockets / sessions | `socket.cpp` | `session[]`, `socket_data`, `do_sockets`, `RFIFO*/WFIFO*` | D2 |
-| A4 | Typed packets + generic dispatcher | `packets.hpp` | `PacketDatabase<T>` | D1 |
-| A5 | SQL access | `sql.cpp` | `Sql_Malloc`, `Sql_Query`, `SqlStmt` | D0 |
-| A6 | YAML DB framework | `database.cpp` | `YamlDatabase`, `TypesafeYamlDatabase`, `TypesafeCachedYamlDatabase`, `parseBodyNode`, `loadingFinished` | D1 |
-| A7 | Legacy containers | `db.cpp` | `DBMap`, `idb_alloc`, `strdb_alloc`… | D0 |
-| A8 | Memory | `malloc.cpp`, `ers.cpp` | `aMalloc`/`CREATE`, `ers_new` | D1 |
+| A1 | Process lifecycle | `core.cpp` | `Core::start`, `e_core_status`, `main_core<T>` | D3 |
+| A2 | Timer scheduler | `timer.cpp` | `add_timer`, `add_timer_interval`, `do_timer`, `TIMER_FUNC` | D3 |
+| A3 | Sockets / sessions | `socket.cpp` | `session[]`, `socket_data`, `do_sockets`, `RFIFO*/WFIFO*` | D3 |
+| A4 | Typed packets + generic dispatcher | `packets.hpp` | `PacketDatabase<T>` | D3 |
+| A5 | SQL access | `sql.cpp` | `Sql_Malloc`, `Sql_Query`, `SqlStmt` | D2 |
+| A6 | YAML DB framework | `database.cpp` | `YamlDatabase`, `TypesafeYamlDatabase`, `TypesafeCachedYamlDatabase`, `parseBodyNode`, `loadingFinished` | D3 |
+| A7 | Legacy containers | `db.cpp` | `DBMap`, `idb_alloc`, `strdb_alloc`… | D2 |
+| A8 | Memory | `malloc.cpp`, `ers.cpp` | `aMalloc`/`CREATE`, `ers_new` | D3 |
 | A9 | Logging / console | `showmsg.cpp`, `cli.cpp` | `Show*`, `cli_get_options`, `parse_console` | D0 |
 | A10 | Map index / GRF / map cache | `mapindex.cpp`, `grfio.cpp`, `map.cpp: map_readallmaps` | — | D0 |
 | A11 | Messages / i18n | `msg_conf.cpp`, `map.cpp: map_msg_*` | `msg_txt(sd, n)` | D0 |
@@ -24,7 +24,7 @@
 
 | # | Subsystem | Anchor | Depth |
 |---|---|---|---|
-| B1 | Client auth (raw/MD5/SSO/OTP) | `logclif_parse_reqauth_raw/md5/sso`, `logclif_parse_otp_login` (`loginclif.cpp:266-475`) | D1 |
+| B1 | Client auth (raw/MD5/SSO/OTP) | `logclif_parse_reqauth_raw/md5/sso`, `logclif_parse_otp_login` (`loginclif.cpp:266-475`) | D2 |
 | B2 | Account engine | `account_db_sql` (`account.cpp`) — vtable-style C struct (`accounts->init(...)`) | D0 |
 | B3 | Char-server registry & auth nodes | `logclif_parse_reqcharconnec`, `logchrif_parse_reqauth` | D1 |
 | B4 | IP ban / login log | `ipban.cpp`, `loginlog.cpp` | D0 |
@@ -34,7 +34,7 @@
 | # | Subsystem | Anchor | Depth |
 |---|---|---|---|
 | C1 | Character select/create/delete/rename/pincode | `CharPacketDatabase`, `chclif_parse_*` | D1 |
-| C2 | Character persistence | `char_mmo_char_tosql`, `char_mmo_char_fromsql` | D0 |
+| C2 | Character persistence | `char_mmo_char_tosql`, `char_mmo_char_fromsql`, `char_memitemdata_to_sql` | D2 |
 | C3 | Map-server registry & map routing | `chmapif_parse`, `chclif_send_map_data` | D1 |
 | C4 | Inter relay | `inter_parse_frommap` + `int_party`, `int_guild`, `int_storage`, `int_mail`, `int_auction`, `int_pet`, `int_homun`, `int_mercenary`, `int_elemental`, `int_quest`, `int_achievement`, `int_clan` | D1 |
 | C5 | Account/char registry variables (`#`, `##` vars) | `mapif_parse_Registry` (`inter.cpp`) | D0 |
@@ -47,7 +47,7 @@
 | D1 | Map data & block grid | `map.cpp/.hpp` | `map_data` (`map.hpp:819`), `block_list`, `map_addblock`, `map_foreachin*`, `id_db`, mapflags (`map_data::flags`) | D1 |
 | D2 | Unit state machine (move/attack/cast) | `unit.cpp` | `unit_data` (`unit.hpp:22`), `unit_walktoxy`, `unit_skilluse_id2` (`:2077`), `unit_attack_timer` | D1 |
 | D3 | Pathfinding / navigation | `path.cpp`, `navi.cpp` | `path_search` (`path.cpp:269`), `navi_create_lists` | D0 |
-| D4 | Client protocol | `clif.cpp`, `clif_packetdb.hpp`, `packets*.hpp` | `clif_parse`, `packet_db[]`, `clif_send` | D2 |
+| D4 | Client protocol | `clif.cpp`, `clif_packetdb.hpp`, `packets*.hpp` | `clif_parse`, `packet_db[]`, `clif_send` | D3 (protocol layer; individual handlers per gameplay doc) |
 | D5 | Char-server link | `chrif.cpp` | `chrif_parse`, `chrif_authreq`, `chrif_save` (`:277`) | D1 |
 | D6 | Inter relay link | `intif.cpp` | `intif_parse`, `intif_saveregistry` | D1 |
 | D7 | SQL logging | `log.cpp` | `log_config_read`, `log_pick_pc` (`log.cpp:261`), `log_zeny` (`:277`) | D0 |

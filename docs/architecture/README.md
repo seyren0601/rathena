@@ -19,6 +19,8 @@ Technical documentation of this rAthena checkout (branch `my-server`), written b
 5. [dependency-map.md](dependency-map.md): how the servers and modules depend on each other, and which server owns which data.
 6. [roadmap.md](roadmap.md): the planned documents, a progress checklist and open questions.
 
+The phase 2 core documents, best read in this order: [startup-and-initialization](startup-and-initialization.md) → [threading-and-concurrency](threading-and-concurrency.md) → [memory-management](memory-management.md) → [networking](networking.md) → [packet-system](packet-system.md) → [database-architecture](database-architecture.md).
+
 ## Index
 
 | Document | Status |
@@ -29,11 +31,13 @@ Technical documentation of this rAthena checkout (branch `my-server`), written b
 | [subsystems.md](subsystems.md) | ✅ Phase 1 (inventory) |
 | [dependency-map.md](dependency-map.md) | ✅ Phase 1 (initial) |
 | [roadmap.md](roadmap.md) | ✅ Phase 1 |
-| startup-and-initialization.md | ⏳ planned |
-| networking.md / packet-system.md | ⏳ planned |
-| threading-and-concurrency.md / memory-management.md | ⏳ planned |
-| database-architecture.md | ⏳ planned |
-| scripting-engine.md | ⏳ planned |
+| [startup-and-initialization.md](startup-and-initialization.md) | ✅ Phase 2 |
+| [threading-and-concurrency.md](threading-and-concurrency.md) | ✅ Phase 2 |
+| [memory-management.md](memory-management.md) | ✅ Phase 2 |
+| [networking.md](networking.md) | ✅ Phase 2 |
+| [packet-system.md](packet-system.md) | ✅ Phase 2 |
+| [database-architecture.md](database-architecture.md) | ✅ Phase 2 |
+| scripting-engine.md | ⏳ planned (phase 3) |
 | gameplay/*.md | ⏳ planned |
 | customization-guide.md / glossary.md / fork-notes.md | ⏳ planned |
 

@@ -22,7 +22,7 @@ flowchart TD
     char --> confc["conf/char_athena, inter_athena, inter_server.yml"]
 ```
 
-Startup order for a working cluster: **login → char → map(s)**; web is independent. ✅ Char reconnects to login via the 10 s interval timer `chlogif_check_connect_logserver` (`char_logif.cpp:808`, registered `:847-848`); map reconnects to char via `check_connect_char_server` (`chrif.cpp:1855`, first scheduled `:1507`).
+Startup order for a working cluster: **login → char → map(s)**; web is independent. ✅ Char reconnects to login via the 10 s interval timer `chlogif_check_connect_logserver` (`char_logif.cpp:808`, registered `:847-848`); map reconnects to char via the 10 s interval timer `check_connect_char_server` (`chrif.cpp:1855`, registered in `do_init_chrif`, `chrif.cpp:1940+`).
 
 ## 2. Map-server module coupling (direct includes)
 

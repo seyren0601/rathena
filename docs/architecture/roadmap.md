@@ -7,7 +7,7 @@ Phases are ordered so that each builds on the previous one. "Depends on" lists t
 | Phase | Document | Scope | Depends on |
 |---|---|---|---|
 | **1 – Discovery** ✅ | `project-overview.md`, `repository-structure.md`, `server-architecture.md`, `subsystems.md`, `dependency-map.md`, `roadmap.md` | This pass | — |
-| 2 – Core | `startup-and-initialization.md` | Full init/finalize for all 4 servers, every `do_init_*`/`do_final_*`, reload paths (`@reload*`) | phase 1 |
+| **2 – Core** ✅ | `startup-and-initialization.md` | Full init/finalize for all 4 servers, every `do_init_*`/`do_final_*`, reload paths (`@reload*`) | phase 1 |
 | 2 | `threading-and-concurrency.md` | Timer heap internals, loop timing, `gettick` caching, web threading, reentrancy hazards (`map_freeblock_lock`) | phase 1 |
 | 2 | `memory-management.md` | `aMalloc`/memmgr, `ers`, `DBMap` ownership, `shared_ptr` in YAML DBs, `map_freeblock` deferred deletion | phase 1 |
 | 2 | `networking.md` | Socket lifecycle, FIFOs, epoll/select, DDoS, full client lifecycle with exact packet IDs, disconnect and autotrade | phase 1 |
@@ -41,12 +41,12 @@ A subsystem is only ticked **complete** when its data structures, main execution
 - [x] Architecture overview (topology, lifecycle, loop, packet routing)
 - [x] Subsystem inventory
 - [x] Initial dependency map
-- [ ] Startup & initialization (detailed)
-- [ ] Threading & concurrency
-- [ ] Memory management
-- [ ] Networking
-- [ ] Packet system
-- [ ] Database architecture
+- [x] Startup & initialization (detailed)
+- [x] Threading & concurrency
+- [x] Memory management
+- [x] Networking
+- [x] Packet system
+- [x] Database architecture
 - [ ] Scripting engine
 - [ ] Map & movement
 - [ ] NPC system
@@ -72,21 +72,21 @@ A subsystem is only ticked **complete** when its data structures, main execution
 These are open questions found during discovery — each will be resolved (or explicitly marked unknown) in the phase noted.
 
 ### Core / infrastructure
-1. **Timer internals** — heap structure, `TIMER_REMOVE_HEAP`, what happens when a timer func deletes its own owner; how `gettick()` caching interacts with long frames. *(phase 2)*
-2. **Deferred deletion** — `map_freeblock_lock/unlock` and how `block_list` objects are safely freed during `map_foreach*` iteration. Critical for anyone writing new combat code. *(phase 2)*
-3. **`TypesafeCachedYamlDatabase`** cache mechanics and reload safety (`database.hpp:150-200`): are pointers held across `@reloaditemdb` invalidated? *(phase 2)*
+1. ✅ *Resolved (threading-and-concurrency.md §2.1)*: **Timer internals** — heap structure, `TIMER_REMOVE_HEAP`, what happens when a timer func deletes its own owner; how `gettick()` caching interacts with long frames. *(phase 2)*
+2. ✅ *Resolved (memory-management.md §4)*: **Deferred deletion** — `map_freeblock_lock/unlock` and how `block_list` objects are safely freed during `map_foreach*` iteration. Critical for anyone writing new combat code. *(phase 2)*
+3. ✅ *Resolved (database-architecture.md §4, startup §7)*: **`TypesafeCachedYamlDatabase`** cache mechanics and reload safety (`database.hpp:150-200`): are pointers held across `@reloaditemdb` invalidated? *(phase 2)*
 4. **MINICORE** exact boundary — which common modules tools get. *(phase 2)*
-5. **`SEND_SHORTLIST` / `SOCKET_EPOLL`** — which are enabled by default in each build system. *(phase 2)*
+5. ✅ *Resolved (networking.md §1)*: **`SEND_SHORTLIST` / `SOCKET_EPOLL`** — which are enabled by default in each build system. *(phase 2)*
 
 ### Networking & packets
-6. Full **client handshake** with exact packet IDs per `PACKETVER 20220406`, including pincode (disabled in this fork via `char_athena.conf`) and the char→map redirect. *(phase 2)*
-7. **Packet versioning** — how `clif_packetdb.hpp` (#if chains), `packets_struct.hpp`, `packets.hpp` (typed structs) and `clif_shuffle.hpp` combine; which coding style new packets should follow. *(phase 2)*
-8. **Obfuscation keys** for this client date (`clif_obfuscation.hpp`) and whether obfuscation is active. *(phase 2)*
+6. ✅ *Resolved (networking.md §6)*: Full **client handshake** with exact packet IDs per `PACKETVER 20220406`, including pincode (disabled in this fork via `char_athena.conf`) and the char→map redirect. *(phase 2)*
+7. ✅ *Resolved (packet-system.md §2-4)*: **Packet versioning** — how `clif_packetdb.hpp` (#if chains), `packets_struct.hpp`, `packets.hpp` (typed structs) and `clif_shuffle.hpp` combine; which coding style new packets should follow. *(phase 2)*
+8. ✅ *Resolved (packet-system.md §5: keys are 0 → inactive)*: **Obfuscation keys** for this client date (`clif_obfuscation.hpp`) and whether obfuscation is active. *(phase 2)*
 9. **Map-server change** across servers (`chrif_changemapserver`) and multi-map-server deployments. *(phase 5)*
 
 ### Data & persistence
-10. **Save cadence & consistency** — autosave interval, `save_settings` flags, what is saved on which event, crash-loss window. *(phase 2)*
-11. **Schema relationships** across the 56 `main.sql` tables (no foreign keys are expected ⚠️). *(phase 2)*
+10. ✅ *Resolved (database-architecture.md §6)*: **Save cadence & consistency** — autosave interval, `save_settings` flags, what is saved on which event, crash-loss window. *(phase 2)*
+11. ✅ *Resolved (database-architecture.md §3: one FK, mostly MyISAM)*: **Schema relationships** across the 56 `main.sql` tables (no foreign keys are expected ⚠️). *(phase 2)*
 12. Which tables map writes **directly** (mapreg, vending, buyingstore, market, barter, logs) and multi-map safety. *(phase 2/5)*
 
 ### Scripting
@@ -101,7 +101,14 @@ These are open questions found during discovery — each will be resolved (or ex
 19. Mob AI: lazy vs hard AI split, mob skill conditions (`mob_skill_db.txt` still TXT). *(phase 4)*
 20. Remaining **legacy TXT databases** (`skill_damage_db`, `produce_db`, `skill_nocast_db`, `item_noequip`, `job_noenter_map`, `mob_skill_db`, `status_disabled`, `skill_changematerial_db`) — loader locations. *(phase 4)*
 
+### New questions raised in phase 2
+24. Whether char's final-save ack (`0x2b21`) always arrives before map's `do_final_chrif` closes the link at shutdown. *(phase 5)*
+25. MySQL reconnect behaviour, given that `Sql_P_KeepaliveTimer` is disabled (`sql.cpp:217`). *(phase 5)*
+26. A TCP-fragmented client packet causes a disconnect (`clif_parse` and `PacketDatabase::handle` call `set_eof` on short reads). Is this a real-world issue? *(phase 5)*
+27. `TypesafeCachedYamlDatabase::find` checks `key < cache.size()` but indexes with `calculateCacheKey(key)`. Audit the DBs that override the key transform. *(phase 4)*
+28. Scripts paused across logout (`script_state` lifetime). *(phase 3)*
+
 ### Fork-specific
 21. Impact of `itemdb_isidentified` always returning `1` on other code paths (e.g. appraisal items, identify skill, NPC checks). *(fork notes)*
 22. `PACKETVER` define placed outside the include guard in `src/custom/defines_pre.hpp` — harmless today but worth normalising. *(fork notes)*
-23. The changes in `src/common/malloc.cpp` (refactor) — confirm behaviour parity with upstream. *(fork notes)*
+23. ✅ *Partly resolved (memory-management.md §1: the int16 index type is inherited from upstream)*: The changes in `src/common/malloc.cpp` (refactor) — confirm behaviour parity with upstream. *(fork notes)*
