@@ -68,8 +68,8 @@
 | E9 | Item bonuses / item scripts | `pc.cpp: pc_bonus*`, `script.cpp` | `pc_bonus` (`pc.cpp:3725`), `pc_bonus2` (`:4498`), … | item `Script:` fields | D0 |
 | E10 | Refine / enchant / reform / Laphine | `status.cpp` (`RefineDatabase` `status.hpp:121`, `EnchantgradeDatabase`), `itemdb.cpp` (`ItemReformDatabase`, `ItemEnchantDatabase`, `Laphine*Database`) | — | `refine.yml` (**modified in this fork**), `enchantgrade.yml`, `item_enchant.yml`, `item_reform.yml`, `laphine_*.yml` | D0 |
 | E11 | Monsters & AI | `mob.cpp` | `mob_data` (`mob.hpp:337`), `MobDatabase`, `mob_spawn` (`:1117`), `mob_ai_sub_hard` (`:1841`), `mob_ai_hard`, `mob_dead` (`:2934`), `mob_once_spawn` (`:679`) | `mob_db.yml`, `mob_skill_db.txt`, `mob_summon.yml`, `mob_chat_db.yml`, `mob_item_ratio.yml`, `map_drops.yml`, `battle/monster.conf`, `battle/drops.conf` | D1 |
-| E12 | NPCs | `npc.cpp`, `npc_chat.cpp` | `npc_data`, `npc_parsesrcfile` (`:5646`), `npc_parse_script/warp/shop/mob/mapflag/function`, `npc_click` (`:2212`), `npc_event` (`:1794`), `npc_event_do_oninit` (`:1420`), `npc_reload` (`:6058`) | `npc/**`, `npc/barters.yml` (`npc.cpp:395`), `db/<mode>/stylist.yml` (`npc.cpp:127`) | D1 |
-| E13 | Script engine | `script.cpp`, `script_constants.hpp`, `mapreg.cpp` | `parse_script_` (`:2475`), `script_code` (`script.hpp:295`), `script_state` (`:316`), `run_script` (`:4186`), `run_script_main` (`:4376`), `buildin_func[]` (`:27928`, 676 `BUILDIN_DEF`s), `ConstantDatabase` | `db/const.yml`, `conf/script_athena.conf`, `doc/script_commands.txt` | D1 |
+| E12 | NPCs | `npc.cpp`, `npc_chat.cpp` | `npc_data`, `npc_parsesrcfile` (`:5646`), `npc_parse_script/warp/shop/mob/mapflag/function`, `npc_click` (`:2212`), `npc_event` (`:1794`), `npc_event_do_oninit` (`:1420`), `npc_reload` (`:6058`) | `npc/**`, `npc/barters.yml` (`npc.cpp:395`), `db/<mode>/stylist.yml` (`npc.cpp:127`) | D3 |
+| E13 | Script engine | `script.cpp`, `script_constants.hpp`, `mapreg.cpp` | `parse_script_` (`:2475`), `script_code` (`script.hpp:295`), `script_state` (`:316`), `run_script` (`:4186`), `run_script_main` (`:4376`), `buildin_func[]` (`:27928`, 676 `BUILDIN_DEF`s), `ConstantDatabase` | `db/const.yml`, `conf/script_athena.conf`, `doc/script_commands.txt` | D3 |
 | E14 | Party | `party.cpp`, char `int_party.cpp` | `party_create` (`:144`) | `battle/party.conf` | D0 |
 | E15 | Guild & WoE | `guild.cpp`, char `int_guild.cpp` | `guild_create` (`:689`), `CastleDatabase`, `GuildSkillTreeDatabase` | `castle_db.yml`, `guild_skill_tree.yml`, `exp_guild.yml`, `battle/guild.conf`, `npc/guild*/` | D0 |
 | E16 | Clan | `clan.cpp`, char `int_clan.cpp` | — | — | D0 |
@@ -89,8 +89,8 @@
 | E30 | Battlegrounds | `battleground.cpp` | `BattlegroundDatabase`, `bg_team_join` (`:523`) | `battleground_db.yml`, `battle/battleground.conf`, `npc/battleground/` | D0 |
 | E31 | Experience, penalties, rates | `pc.cpp`, `mob.cpp` | `PenaltyDatabase` | `level_penalty.yml` (**emptied in fork**), `battle/exp.conf`, `battle/drops.conf` | D0 |
 | E32 | Attendance / reputation / captcha / stylist / barter | `pc.cpp`, `npc.cpp` | `AttendanceDatabase`, `ReputationDatabase`, `CaptchaDatabase`, `StylistDatabase`, `BarterDatabase` | `attendance.yml`, `reputation*.yml`, `captcha_db.yml`, `npc/barters.yml` | D0 |
-| E33 | Global map variables (`$var`) | `mapreg.cpp` | `mapreg` table, `mapreg_dirty` flag | `sql: mapreg` | D0 |
-| E34 | Gameplay events (OnInit, OnPC*, OnClock, WoE timers) | `npc.cpp`, `script.cpp` | `npc_event_doall` (`npc.cpp:1322`), `npc_event_do_clock` timer (`npc.cpp:1368`) | `doc/woe_time_explanation.txt` | D0 |
+| E33 | Global map variables (`$var`) | `mapreg.cpp` | `mapreg` table, `mapreg_dirty` flag | `sql: mapreg` | D2 |
+| E34 | Gameplay events (OnInit, OnPC*, OnClock, WoE timers) | `npc.cpp`, `script.cpp` | `npc_event_doall` (`npc.cpp:1322`), `npc_event_do_clock` timer (`npc.cpp:1368`) | `doc/woe_time_explanation.txt` | D2 |
 | E35 | Navigation generator | `navi.cpp`, `MAP_GENERATOR` | `navi_create_lists` | `tools/navi.py` | D0 |
 
 ## F. Web-server (`src/web`)

@@ -13,7 +13,7 @@ Phases are ordered so that each builds on the previous one. "Depends on" lists t
 | 2 | `networking.md` | Socket lifecycle, FIFOs, epoll/select, DDoS, full client lifecycle with exact packet IDs, disconnect and autotrade | phase 1 |
 | 2 | `packet-system.md` | `packet_db`/`clif_packetdb.hpp` versioning, `packets_struct.hpp`, obfuscation & shuffle, `PacketDatabase`, inter-server tables (chrif/intif/inter/logchrif), how to add a packet | networking |
 | 2 | `database-architecture.md` | `Sql`/`SqlStmt`, handle usage per server, schema relationships (ER diagram), YAML framework internals (imports, cache, `loadingFinished`), runtime ↔ SQL mapping, saving cadence | phase 1 |
-| 3 – Engine | `scripting-engine.md` | Lexer/parser, bytecode (`c_op`), stack VM, variables & scopes, `buildin_func` registration, sleep/`RERUNLINE`, script ↔ C++ bridge, adding a command; trace one NPC end-to-end | database |
+| 3 – Engine (✅ scripting, npc; ⏳ map-and-movement) | `scripting-engine.md` | Lexer/parser, bytecode (`c_op`), stack VM, variables & scopes, `buildin_func` registration, sleep/`RERUNLINE`, script ↔ C++ bridge, adding a command; trace one NPC end-to-end | database |
 | 3 | `gameplay/map-and-movement.md` | `map_data`, cells, block grid, `unit_walktoxy` → path → timers → `clif_move`, warping (`pc_setpos`, cross-server map change), mapflags | networking |
 | 3 | `gameplay/npc-system.md` | NPC file parsing, NPC types, events (`OnInit`, `OnPC*`, `OnClock`, `OnTouch`), dialog flow, duplicates, reload | scripting |
 | 4 – Gameplay | `gameplay/character-system.md` | `map_session_data`, auth/load/save, jobs, stat points, exp, registry vars | database |
@@ -47,9 +47,9 @@ A subsystem is only ticked **complete** when its data structures, main execution
 - [x] Networking
 - [x] Packet system
 - [x] Database architecture
-- [ ] Scripting engine
+- [x] Scripting engine
 - [ ] Map & movement
-- [ ] NPC system
+- [x] NPC system
 - [ ] Character system
 - [ ] Status system
 - [ ] Skill system
@@ -90,9 +90,9 @@ These are open questions found during discovery — each will be resolved (or ex
 12. Which tables map writes **directly** (mapreg, vending, buyingstore, market, barter, logs) and multi-map safety. *(phase 2/5)*
 
 ### Scripting
-13. Script **bytecode format** and parser stages; how `RERUNLINE`/sleep/`menu` suspend and resume `script_state`. *(phase 3)*
-14. Variable scopes (`@`, `$`, `$@`, `.`, `.@`, `'`, `#`, `##`) → storage location (memory, mapreg, char/acc registry). *(phase 3)*
-15. `script_constants.hpp` export mechanism and `db/const.yml`. *(phase 3)*
+13. ✅ *Resolved (scripting-engine.md §3-4)*: Script **bytecode format** and parser stages; how `RERUNLINE`/sleep/`menu` suspend and resume `script_state`. *(phase 3)*
+14. ✅ *Resolved (scripting-engine.md §5)*: Variable scopes (`@`, `$`, `$@`, `.`, `.@`, `'`, `#`, `##`) → storage location (memory, mapreg, char/acc registry). *(phase 3)*
+15. ✅ *Resolved (scripting-engine.md §3.1)*: `script_constants.hpp` export mechanism and `db/const.yml`. *(phase 3)*
 
 ### Gameplay
 16. **SkillImpl migration status** — which skills still use legacy switches; how `calculateSkillRatio` interacts with `battle_calc_skillratio`. *(phase 4)*
@@ -106,7 +106,12 @@ These are open questions found during discovery — each will be resolved (or ex
 25. MySQL reconnect behaviour, given that `Sql_P_KeepaliveTimer` is disabled (`sql.cpp:217`). *(phase 5)*
 26. A TCP-fragmented client packet causes a disconnect (`clif_parse` and `PacketDatabase::handle` call `set_eof` on short reads). Is this a real-world issue? *(phase 5)*
 27. `TypesafeCachedYamlDatabase::find` checks `key < cache.size()` but indexes with `calculateCacheKey(key)`. Audit the DBs that override the key transform. *(phase 4)*
-28. Scripts paused across logout (`script_state` lifetime). *(phase 3)*
+28. ✅ *Resolved (scripting-engine.md §11: `npc_event_dequeue` frees `sd->st` in `map_quit`)*: Scripts paused across logout (`script_state` lifetime). *(phase 3)*
+
+### New questions raised in phase 3
+29. `do_init_npc`'s exact post-load order compared with `npc_reload`'s. *(phase 3, map-and-movement pass)*
+30. Which other YAML DBs compile script fields (combos, random options, pets, item packages…) and when they run. *(phase 4: item-system)*
+31. `bonus_script` / `autobonus` runtime compilation and the lifetime of their `script_code`. *(phase 4)*
 
 ### Fork-specific
 21. Impact of `itemdb_isidentified` always returning `1` on other code paths (e.g. appraisal items, identify skill, NPC checks). *(fork notes)*

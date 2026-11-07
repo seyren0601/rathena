@@ -37,8 +37,10 @@ The phase 2 core documents, best read in this order: [startup-and-initialization
 | [networking.md](networking.md) | ✅ Phase 2 |
 | [packet-system.md](packet-system.md) | ✅ Phase 2 |
 | [database-architecture.md](database-architecture.md) | ✅ Phase 2 |
-| scripting-engine.md | ⏳ planned (phase 3) |
-| gameplay/*.md | ⏳ planned |
+| [scripting-engine.md](scripting-engine.md) | ✅ Phase 3 |
+| [gameplay/npc-system.md](gameplay/npc-system.md) | ✅ Phase 3 |
+| gameplay/map-and-movement.md | ⏳ phase 3 (remaining) |
+| other gameplay/*.md | ⏳ phase 4–5 |
 | customization-guide.md / glossary.md / fork-notes.md | ⏳ planned |
 
 ## Key facts at a glance
@@ -48,6 +50,7 @@ The phase 2 core documents, best read in this order: [startup-and-initialization
 - The char-server sits at the **centre of a star**. Map-servers relay all shared or persistent state through it, using `chrif` for control and `intif` for inter-server traffic.
 - Static game data is stored in **YAML** and loaded through `TypesafeYamlDatabase` subclasses. Mutable state lives in **MySQL**.
 - The client protocol version is fixed **at compile time** (`PACKETVER 20220406` in `src/custom/defines_pre.hpp`). This fork builds in Renewal mode.
+- NPC scripts compile to bytecode for a stack VM in `script.cpp`. Dialogs pause the VM in `sd->st` and resume it when the client replies. Builtin commands live in `buildin_func[]`, and custom ones go in `src/custom/script*.inc`.
 - Skills are being moved from large `switch` blocks to **per-skill classes** in `src/map/skills/` (`SkillImpl`).
 - The official source customisation points are `src/custom/*.inc`, `src/map/skills/custom/`, `conf/import/` and `db/import/`.
 
