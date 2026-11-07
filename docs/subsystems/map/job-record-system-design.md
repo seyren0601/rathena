@@ -224,7 +224,7 @@ Why each ordering choice matters:
 3. Clear the whitelisted job-quest variables and quest-log entries, and set the change levels to 0.
 4. `base_level = 1`, `base_exp = 0` (decision 10). Then `pc_jobchange(JOB_NOVICE or JOB_SUMMONER, upper = 0)`. Upper 0 turns transcendent and baby characters into a **plain** Novice (decision 2): `pc_jobchange` removes the +52 transcendent points or resets.
 5. `pc_resetskill`, `skill_point = 0`, `pc_resetstate` (recomputes status points for base 1 and sets stats to 1).
-6. If the race changed, reset the hairstyle to 1 ❓ (§2.7).
+6. Set the new record's look per §9.1: Doram gets hair 1–10 and clothes colour 0; a human copies the current look if it's human, otherwise hair 1.
 7. Nothing equipped. The new record is saved with `JR_SAVE`, then `chrif_save`.
 
 ### 4.3 Delete record K
@@ -293,14 +293,14 @@ Recommendation: `max_job_records: 20` in a new `conf/battle/job_record.conf` (or
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| Duplicated/lost items if the char-server crashes between the inventory save and the stash save | High | `unique_id` de-duplication on restore. Log every move to `picklog` (`log_pick_pc` with a new `LOG_TYPE_*`) |
+| Duplicated/lost items if the char-server crashes or the connection drops mid-save | High | §9.2: write order "additions → inventory → status → removals", resend until ACK, `unique_id` de-duplication on load and on delete, a switch journal (`pending_to`) checked at login. Log every move to `picklog` (`log_pick_pc`, new `LOG_TYPE_*`) |
 | Skills lost because of stale `change_level_*` | High | Restore in C++ before `pc_calc_skilltree` (DD §2.5) |
 | Mail expiry deletes the gear of a deleted record | Resolved | `send_id = 0` mails are never expired (§2.4) |
 | A second action starts while the first is still being written or read | High | 30 s cooldown **plus** an in-flight state flag (§8) |
 | Whitelist misses a job variable (an official quest gets stuck) or includes a shared one (non-job quest progress breaks) | Medium | Curate it, and test each job line once. The YAML can be fixed without a rebuild (`@reloadjobrecord` builtin) |
 | Not enough inventory slots for the incoming gear | Medium | Preview refuses (`pc_inventoryblank(sd) < equip_count`) |
 | Player logs out while a `JR_LOAD` is pending | Low | The state machine drops the pending record on `map_quit`. Nothing has changed yet at that point |
-| Doram ↔ human hairstyle sprite crash | Low ❓ | Reset hair on race change; test with the 2022-04-06 client |
+| Doram ↔ human hairstyle out of the Doram range | Medium ❓ | §9.1: store the look per record; a new Doram record gets hair 1–10 and clothes colour 0; test on the client |
 | Costume or shadow gear in odd slots | Low | `equip` keeps the exact `EQP_*` mask; restore with `pc_equipitem(…, pos)` |
 | Equip-switch feature (`equipSwitch` slots) | Low | Clear the equip-switch set on switch ⚠️ (not traced) |
 
@@ -322,4 +322,91 @@ Rules:
 3. Store the end time as a permanent character variable (`JR_COOLDOWN`, Unix seconds). Relogging doesn't reset it, and it's never part of the per-record whitelist.
 4. Viewing records and renaming them are **not** subject to the cooldown, since they don't move items or switch the job. Rename is a single `JR_RENAME` write.
 5. Setting: `job_record_cooldown: 30000` (ms) next to `max_job_records`.
-6. If the char-server connection drops while the state is `LOADING`, nothing has been changed yet: reset to `IDLE` when `chrif_on_disconnect` runs. In `APPLYING`, all changes are local to `sd` until the closing `chrif_save`, so the normal save-on-reconnect path (`chrif_check`) applies ⚠️ (to verify during implementation).
+6. Char-server connection loss: see §9.2. The short version: refuse every action unless `chrif_isconnected()`, time out `LOADING` after 10 s, and resend all job-record writes until the char-server acknowledges them.
+
+---
+
+## 9. Checks of the two open items (2026-11-08)
+
+### 9.1 Doram hairstyle after switching from a human record
+
+**What the server does** ✅
+
+| Fact | Source |
+|---|---|
+| One shared hairstyle range for **both** races: `min_hair_style: 0`, `max_hair_style: 42` | `conf/battle/client.conf:17-18`, macros `MIN/MAX_HAIR_STYLE` in `src/map/battle.hpp:154-155` |
+| `pc_changelook(LOOK_HAIR)` only clamps to that range. There's no race check | `pc_changelook`, `src/map/pc.cpp:11116-11117` |
+| The view data clamps to the same range | `status_set_viewdata`, `src/map/status.cpp:9429` |
+| `pc_jobchange` re-sends the stored `hair` value unchanged when the race changes | `pc_jobchange`, `pc.cpp:11001` (comment: "only matters when switching to or from Doram") |
+| Character creation doesn't validate hairstyle per race | `char_make_new_char`, `src/char/char.cpp:1394` (the value is inserted as the client sent it) |
+| Race comes from the class (`MAPID_SUMMONER` → `summoner_race`) | `status.cpp:3840` |
+
+So a human with hair 25 who switches to a Doram record **stays at hair 25 on the server**, and the client is told to draw Doram head 25.
+
+**What the official data supports for Doram** ✅ (`db/re/stylist.yml`, used by the Style UI. `clif_parse_stylist_buy_sub`, `clif.cpp:22852`, picks `entry->doram` for Summoners and refuses the purchase if it's null):
+
+| Look | Human options | Doram options |
+|---|---|---|
+| Hairstyle | 1–42 | **1–10**. Styles 1–6 cost zeny. 7–10 are written as `CostDoram:` instead of `CostsDoram:`, so the parser (`npc.cpp:368`) never loads them and Doram can't buy them. That's an upstream data typo |
+| Hair colour | 0–8 | 0–8 (same) |
+| Clothes colour | 0, 2–7 | **0, 2, 3** |
+| Body2 (alt outfit) | 0–1 | none |
+
+**What the client does** ❓ This can't be read from the server source. A Doram head sprite or palette number that the client data doesn't have usually shows as a missing or bald head, or a "resource not found" error, depending on the client build. **Test it manually** on the 2022-04-06 client: a Doram with hair 11, 25 and 42, and clothes colour 4 and 7.
+
+**Design change** (whatever the test shows):
+- Store `hair`, `hair_color` and `clothes_color` **per record** (columns in `char_job_record`), so each record keeps its own look.
+- New **Doram** record: hair 1, or let the player pick 1–10 in the creation menu. Clothes colour 0. Keep the hair colour (0–8 is valid for both races).
+- New **human** record: copy the current look if the current record is human, otherwise hair 1 and clothes colour 0.
+- When switching, write `sd->status.hair`, `hair_color` and `clothes_color` **before** `pc_jobchange`, so its single `LOOK_HAIR` refresh is already correct. Then call `pc_changelook` for each look so the guild window updates too (`pc_changelook` calls `intif_guild_change_memberinfo`, `pc.cpp:11121`).
+- Optional: fix the `CostDoram` → `CostsDoram` typo in an import copy of `stylist.yml` so Doram can get styles 7–10.
+
+### 9.2 Char-server connection drops in the middle of a switch
+
+**What the engine does today** ✅
+
+| Behaviour | Source |
+|---|---|
+| On disconnect, the map marks itself not connected and retries every second. **Players stay online** | `chrif_on_disconnect`, `src/map/chrif.cpp:1498` |
+| `chrif_save` returns **before sending anything** (inventory, registry, status) while disconnected. The code comment says "Character is saved on reconnect" | `chrif_save`, `chrif.cpp:277` (`chrif_check(-1)`, macro at `:124`) |
+| Inter-server (intif) packets are silently dropped when there's no char socket. That check looks at the socket, not the finished handshake (`chrif_state == 2`) | `CheckForCharServer`, `src/map/intif.cpp:61` |
+| After reconnect: online players are re-registered, players who logged out meanwhile get their **final save re-sent**, and guild storages are re-saved | `chrif_on_ready` `:541`, `chrif_reconnect` `:507-521` (`chrif_save(node->sd, CSAVE_QUIT\|CSAVE_INVENTORY\|CSAVE_CART)`), `do_reconnect_storage` (`storage.cpp:117`) |
+| Players still online are saved again by the **autosave** timer | `pc_autosave`, `pc.cpp:13002` (`chrif_save(sd, CSAVE_INVENTORY\|CSAVE_CART)`). `autosave_time: 300` (`conf/map_athena.conf:91`) |
+| Inventory is saved as a **full-state diff**: database rows are matched to memory items by content, including `unique_id`, then updated, deleted or inserted | `char_memitemdata_to_sql`, `src/char/char.cpp:533` |
+| The storage `dirty` flag is cleared **only when the char-server acknowledges**. The registry `vars_dirty` flag is cleared **as soon as it's sent**, so registry writes still in an unflushed buffer are lost if the socket dies | `intif.cpp:3574` (storage ACK) vs `intif_saveregistry`, `intif.cpp:513` |
+
+**What this means for §4.1 as written:** its one-shot `JR_SAVE` / `JR_CLAIM` is **not safe**.
+
+| When the connection drops | Outcome with the v2 flow |
+|---|---|
+| `JR_LOAD_REQ` dropped | The state stays `LOADING` forever. The player is locked out of records until they relog |
+| After the in-memory switch, with `JR_SAVE(A)` and `JR_CLAIM(K)` dropped, and the next autosave after reconnect saving the new inventory | **A's gear is lost** (removed from the inventory, never written to A's stash) and **K's gear is duplicated** (in the inventory and still in K's stash) |
+| Registry dropped from the send buffer | The database holds the old record's job-quest variables next to the new record's status ⚠️ |
+
+**Revised write protocol** (replaces the save steps of §4.1):
+
+1. **Gate.** Every create, switch or delete requires `chrif_isconnected()` (the handshake state, not just the socket). Check it when the player asks **and again** in the `JR_LOAD_ACK` handler. `LOADING` gets a 10 s timer: on timeout, go back to `IDLE` and tell the player to try again. Nothing has changed at that point.
+2. **Mark dirty and resend, like storage does.** The switch is applied in memory, and every record it touched goes into `sd->job_record_dirty` as **full state** (scalars, skills, variables, quests, hotkeys, look, stash item set). A hook in `chrif_save` sends this **on every save** of the player (manual, autosave, quit, and the re-sent final save for players who logged out while disconnected) until the char-server acknowledges it. Clear the flag only on that acknowledgement, the same way `storage.dirty` works. While disconnected, `chrif_check(-1)` sends nothing, so nothing is ever half-sent.
+3. **Order inside one `chrif_save`.** It's one send buffer, and the char-server applies the packets in order:
+   1. `JR_UPSERT`: the outgoing record A. Its stash rows are **inserted only** (never deleted here), and a journal row records `pending_to = K`. One SQL transaction.
+   2. Inventory (`intif_storage_save`): A's gear has left, K's gear has arrived.
+   3. Registry, then status `0x2b01` (the existing order).
+   4. `JR_COMMIT`: `active = K`, **delete** K's stash rows, clear `pending_to`. One SQL transaction.
+
+   Additions are written before the inventory and removals after it, so a char-server crash at **any** point leaves at worst a **duplicate**, never a lost item.
+4. **Remove duplicates by `unique_id`.** When a record's stash is loaded (`JR_LOAD_ACK`), skip and delete any stash item whose `unique_id` is already in the inventory, cart or storage. When deleting a record, the char-server runs the same check against `inventory`, `cart_inventory` and `storage` before building the mails. Every inventory item has a non-zero `unique_id` (`pc_additem`, `pc.cpp:6062`; zeros are fixed on load at `:12694`).
+5. **Switch journal checked at login.** If `JR_LIST_ACK` reports `pending_to = K`, the status save may or may not have landed. Compare the live status (class, base level, job level, job exp, skill points, stats) with K's stored snapshot, which is exactly what the switch applied. If they match, finish the commit (`active = K`, de-duplicate K's stash). If not, roll the pointer back (`pending_to = 0`). This stops a later switch from saving K's live data into record A.
+6. **Registry.** The live job-quest variables still go through the normal registry, which forgets pending writes once sent (`intif.cpp:513`). So also include them in the `JR_UPSERT` payload of the record that **became active**, and re-apply them from there at login while `pending_to` is set. The job-record tables are then the authoritative copy.
+7. **Logging out while dirty.** `map_quit` → `chrif_save(CSAVE_QUIT…)` runs the hook. If the char-server is down, the auth node keeps `sd` alive and `chrif_reconnect` re-sends the final save, hook included. So `sd->job_record_dirty` must live in `map_session_data` and be freed by its destructor, not in `map_quit`.
+
+**Revised outcome by failure:**
+
+| Failure | Outcome |
+|---|---|
+| Char-server down before the action | Refused ("Character server unavailable") |
+| Down during `LOADING` | Timeout → `IDLE`, nothing changed |
+| Down after the in-memory switch | The player keeps playing the new record. Everything is re-sent at the next save after reconnect (autosave within 300 s, or the logout re-send) |
+| Map-server crashes before the first send | The database still holds the complete old state. The player comes back on the old record with the old gear, consistent (only the usual unsaved progress is lost) |
+| Char-server crashes partway through the sequence | At worst a duplicate stash row, removed by `unique_id`. The pointer is repaired by the journal at login |
+
+**Not verifiable from source** ❓ Real crash timing: large buffers can be split across several TCP writes. Test plan for implementation: kill the char-server (a) right after "Preparing record…", (b) right after "Now playing…", (c) while it's down, `@kick` the player. After reconnecting, compare the `inventory` and `char_job_record_item` rows by `unique_id`.
