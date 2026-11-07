@@ -39,7 +39,7 @@ The phase 2 core documents, best read in this order: [startup-and-initialization
 | [database-architecture.md](database-architecture.md) | ✅ Phase 2 |
 | [scripting-engine.md](scripting-engine.md) | ✅ Phase 3 |
 | [gameplay/npc-system.md](gameplay/npc-system.md) | ✅ Phase 3 |
-| gameplay/map-and-movement.md | ⏳ phase 3 (remaining) |
+| [gameplay/map-and-movement.md](gameplay/map-and-movement.md) | ✅ Phase 3 |
 | other gameplay/*.md | ⏳ phase 4–5 |
 | customization-guide.md / glossary.md / fork-notes.md | ⏳ planned |
 

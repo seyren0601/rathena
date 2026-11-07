@@ -44,9 +44,9 @@
 
 | # | Subsystem | Files | Anchor symbols | Depth |
 |---|---|---|---|---|
-| D1 | Map data & block grid | `map.cpp/.hpp` | `map_data` (`map.hpp:819`), `block_list`, `map_addblock`, `map_foreachin*`, `id_db`, mapflags (`map_data::flags`) | D1 |
-| D2 | Unit state machine (move/attack/cast) | `unit.cpp` | `unit_data` (`unit.hpp:22`), `unit_walktoxy`, `unit_skilluse_id2` (`:2077`), `unit_attack_timer` | D1 |
-| D3 | Pathfinding / navigation | `path.cpp`, `navi.cpp` | `path_search` (`path.cpp:269`), `navi_create_lists` | D0 |
+| D1 | Map data & block grid | `map.cpp/.hpp` | `map_data` (`map.hpp:819`), `block_list`, `map_addblock`, `map_foreachin*`, `id_db`, mapflags (`map_data::flags`) | D3 |
+| D2 | Unit state machine (move/attack/cast) | `unit.cpp` | `unit_data` (`unit.hpp:22`), `unit_walktoxy`, `unit_skilluse_id2` (`:2077`), `unit_attack_timer` | D3 |
+| D3 | Pathfinding / navigation | `path.cpp`, `navi.cpp` | `path_search` (`path.cpp:269`), `navi_create_lists` | D3 |
 | D4 | Client protocol | `clif.cpp`, `clif_packetdb.hpp`, `packets*.hpp` | `clif_parse`, `packet_db[]`, `clif_send` | D3 (protocol layer; individual handlers per gameplay doc) |
 | D5 | Char-server link | `chrif.cpp` | `chrif_parse`, `chrif_authreq`, `chrif_save` (`:277`) | D1 |
 | D6 | Inter relay link | `intif.cpp` | `intif_parse`, `intif_saveregistry` | D1 |

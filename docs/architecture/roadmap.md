@@ -13,7 +13,7 @@ Phases are ordered so that each builds on the previous one. "Depends on" lists t
 | 2 | `networking.md` | Socket lifecycle, FIFOs, epoll/select, DDoS, full client lifecycle with exact packet IDs, disconnect and autotrade | phase 1 |
 | 2 | `packet-system.md` | `packet_db`/`clif_packetdb.hpp` versioning, `packets_struct.hpp`, obfuscation & shuffle, `PacketDatabase`, inter-server tables (chrif/intif/inter/logchrif), how to add a packet | networking |
 | 2 | `database-architecture.md` | `Sql`/`SqlStmt`, handle usage per server, schema relationships (ER diagram), YAML framework internals (imports, cache, `loadingFinished`), runtime ↔ SQL mapping, saving cadence | phase 1 |
-| 3 – Engine (✅ scripting, npc; ⏳ map-and-movement) | `scripting-engine.md` | Lexer/parser, bytecode (`c_op`), stack VM, variables & scopes, `buildin_func` registration, sleep/`RERUNLINE`, script ↔ C++ bridge, adding a command; trace one NPC end-to-end | database |
+| **3 – Engine** ✅ | `scripting-engine.md` | Lexer/parser, bytecode (`c_op`), stack VM, variables & scopes, `buildin_func` registration, sleep/`RERUNLINE`, script ↔ C++ bridge, adding a command; trace one NPC end-to-end | database |
 | 3 | `gameplay/map-and-movement.md` | `map_data`, cells, block grid, `unit_walktoxy` → path → timers → `clif_move`, warping (`pc_setpos`, cross-server map change), mapflags | networking |
 | 3 | `gameplay/npc-system.md` | NPC file parsing, NPC types, events (`OnInit`, `OnPC*`, `OnClock`, `OnTouch`), dialog flow, duplicates, reload | scripting |
 | 4 – Gameplay | `gameplay/character-system.md` | `map_session_data`, auth/load/save, jobs, stat points, exp, registry vars | database |
@@ -48,7 +48,7 @@ A subsystem is only ticked **complete** when its data structures, main execution
 - [x] Packet system
 - [x] Database architecture
 - [x] Scripting engine
-- [ ] Map & movement
+- [x] Map & movement
 - [x] NPC system
 - [ ] Character system
 - [ ] Status system
@@ -82,7 +82,7 @@ These are open questions found during discovery — each will be resolved (or ex
 6. ✅ *Resolved (networking.md §6)*: Full **client handshake** with exact packet IDs per `PACKETVER 20220406`, including pincode (disabled in this fork via `char_athena.conf`) and the char→map redirect. *(phase 2)*
 7. ✅ *Resolved (packet-system.md §2-4)*: **Packet versioning** — how `clif_packetdb.hpp` (#if chains), `packets_struct.hpp`, `packets.hpp` (typed structs) and `clif_shuffle.hpp` combine; which coding style new packets should follow. *(phase 2)*
 8. ✅ *Resolved (packet-system.md §5: keys are 0 → inactive)*: **Obfuscation keys** for this client date (`clif_obfuscation.hpp`) and whether obfuscation is active. *(phase 2)*
-9. **Map-server change** across servers (`chrif_changemapserver`) and multi-map-server deployments. *(phase 5)*
+9. ✅ *Partly resolved (map-and-movement.md §6: pc_setpos → chrif_changemapserver flow; multi-server ops still open)*: **Map-server change** across servers (`chrif_changemapserver`) and multi-map-server deployments. *(phase 5)*
 
 ### Data & persistence
 10. ✅ *Resolved (database-architecture.md §6)*: **Save cadence & consistency** — autosave interval, `save_settings` flags, what is saved on which event, crash-loss window. *(phase 2)*
@@ -109,9 +109,13 @@ These are open questions found during discovery — each will be resolved (or ex
 28. ✅ *Resolved (scripting-engine.md §11: `npc_event_dequeue` frees `sd->st` in `map_quit`)*: Scripts paused across logout (`script_state` lifetime). *(phase 3)*
 
 ### New questions raised in phase 3
-29. `do_init_npc`'s exact post-load order compared with `npc_reload`'s. *(phase 3, map-and-movement pass)*
+29. `do_init_npc`'s exact post-load order compared with `npc_reload`'s. *(phase 5)*
 30. Which other YAML DBs compile script fields (combos, random options, pets, item packages…) and when they run. *(phase 4: item-system)*
 31. `bonus_script` / `autobonus` runtime compilation and the lifetime of their `script_code`. *(phase 4)*
+
+### New questions raised in the map-and-movement pass
+32. How hidden units (cloaking, GM hide, Chase Walk) are filtered in `clif_insight` and `clif_getareachar_unit`. *(phase 4: status-system)*
+33. How `CELL_NOSTACK` and `custom_cell_stack_limit` are used, and whether they are enabled in any build. *(phase 4)*
 
 ### Fork-specific
 21. Impact of `itemdb_isidentified` always returning `1` on other code paths (e.g. appraisal items, identify skill, NPC checks). *(fork notes)*
