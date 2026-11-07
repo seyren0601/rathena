@@ -81,6 +81,8 @@ Changing any of these requires a rebuild of all servers.
 | `src/map/itemdb.cpp` (`itemdb_isidentified`) | Always returns `1` — all items drop identified |
 | `src/common/malloc.cpp` | Readability refactor |
 
+The full commit-by-commit list, config and DB values, and merge hazards are in [fork-notes.md](fork-notes.md).
+
 Everything else is data/config/NPC changes (rates, refine table, cash shop, custom NPCs such as `npc/custom/change_dress.txt`, `endower.txt`). Upstream merges will need to account for these.
 
 ## Related documents

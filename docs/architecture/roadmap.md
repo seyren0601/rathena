@@ -29,7 +29,7 @@ Phases are ordered so that each builds on the previous one. "Depends on" lists t
 | 5 | `inter-server.md` | char-server `inter`/`int_*` modules, relay patterns, ownership | packet-system |
 | 5 | `login-and-char-servers.md` | Internals of login and char beyond the network handshake | networking |
 | 5 | `web-server.md` | Routes, auth, threading, schema | database |
-| 6 – Guidance | `customization-guide.md` | Extension points per subsystem, `src/custom/*.inc`, `SkillFactoryCustom`, import dirs, script vs C++ decision guide, worked examples | all |
+| **6 – Guidance** ✅ | `customization-guide.md` | Extension points per subsystem, `src/custom/*.inc`, `SkillFactoryCustom`, import dirs, script vs C++ decision guide, worked examples | all |
 | 6 | `glossary.md` | Terms: AID/CID/GID, SC, bl, sd/md/nd, ud, ers, mapreg, WoE, MVP, renewal, PACKETVER… | all |
 | 6 | `fork-notes.md` | Divergence from upstream (`my-server`), merge hazards | phase 1 |
 
@@ -63,9 +63,9 @@ A subsystem is only ticked **complete** when its data structures, main execution
 - [x] Inter-server
 - [x] Login & char server internals
 - [x] Web server
-- [ ] Customization guide
-- [ ] Glossary
-- [ ] Fork notes
+- [x] Customization guide
+- [x] Glossary
+- [x] Fork notes
 
 ## 3. Areas requiring deeper investigation
 
@@ -126,12 +126,12 @@ These are open questions found during discovery — each will be resolved (or ex
 ### New questions raised in phase 5
 38. Friend online/offline notifications only reach players on the **same map-server** (`map_foreachpc`, `clif.cpp:10977`, `unit.cpp:3978`). Is that acceptable for multi-map deployments? *(only if multi-map)*
 39. Inter requests sent while map↔char is down are dropped (`CheckForCharServer`). Party/guild chat and changes during an outage are lost. *(ops note)*
-40. **Web-server `*_load` routes are unauthenticated** (`charconfig_load`, `userconfig_load`, `merchantstore_load`; auth commented out upstream). Firewall port 8888 or re-enable the check. *(security, fork-notes)*
-41. **Passwords stored in plaintext** (`use_MD5_passwords: no`, `conf/login_athena.conf:118`). Decide on hashing before production. *(security, fork-notes)*
+40. *(collected in fork-notes.md §8)* **Web-server `*_load` routes are unauthenticated** (`charconfig_load`, `userconfig_load`, `merchantstore_load`; auth commented out upstream). Firewall port 8888 or re-enable the check. *(security, fork-notes)*
+41. *(collected in fork-notes.md §8)* **Passwords stored in plaintext** (`use_MD5_passwords: no`, `conf/login_athena.conf:118`). Decide on hashing before production. *(security, fork-notes)*
 42. Web-server serializes all SQL through one global mutex (`sqllock.cpp:10`). Measure if the web load grows. *(perf)*
 43. Guild exp is cached on the map for up to 10 s (`GUILD_PAYEXP_INTERVAL`), so it can be lost on a map crash. *(ops note)*
 
 ### Fork-specific
 21. ✅ *Resolved (item-system.md §1, monster-system.md §5, npc-system.md §5.2: every created item is identified; Identify skill and OnPCIdentifyEvent effectively unused)*: Impact of `itemdb_isidentified` always returning `1` on other code paths (e.g. appraisal items, identify skill, NPC checks). *(fork notes)*
-22. `PACKETVER` define placed outside the include guard in `src/custom/defines_pre.hpp` — harmless today but worth normalising. *(fork notes)*
-23. ✅ *Partly resolved (memory-management.md §1: the int16 index type is inherited from upstream)*: The changes in `src/common/malloc.cpp` (refactor) — confirm behaviour parity with upstream. *(fork notes)*
+22. ✅ *Documented (fork-notes.md §2)*: `PACKETVER` define placed outside the include guard in `src/custom/defines_pre.hpp` — harmless today but worth normalising. *(fork notes)*
+23. ✅ *Resolved (memory-management.md §1, fork-notes.md §2: refactor only; int16 index inherited from upstream)*: The changes in `src/common/malloc.cpp` (refactor) — confirm behaviour parity with upstream. *(fork notes)*

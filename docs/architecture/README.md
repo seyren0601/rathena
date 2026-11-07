@@ -19,6 +19,11 @@ Technical documentation of this rAthena checkout (branch `my-server`), written b
 5. [dependency-map.md](dependency-map.md): how the servers and modules depend on each other, and which server owns which data.
 6. [roadmap.md](roadmap.md): the planned documents, a progress checklist and open questions.
 
+Task-oriented entry points:
+- **Changing or extending the server?** Start with [customization-guide.md](customization-guide.md). It picks the right layer (conf → db → script → `src/custom` → core) and has checklists.
+- **Merging upstream or auditing this fork?** Read [fork-notes.md](fork-notes.md) (every fork change, merge hazards, security items).
+- **Unknown abbreviation (`sd`, `SCB`, `BCT`, `GID`…)?** See [glossary.md](glossary.md).
+
 The phase 2 core documents, best read in this order: [startup-and-initialization](startup-and-initialization.md) → [threading-and-concurrency](threading-and-concurrency.md) → [memory-management](memory-management.md) → [networking](networking.md) → [packet-system](packet-system.md) → [database-architecture](database-architecture.md).
 
 ## Index
@@ -53,7 +58,9 @@ The phase 2 core documents, best read in this order: [startup-and-initialization
 | [inter-server.md](inter-server.md) | ✅ Phase 5 |
 | [login-and-char-servers.md](login-and-char-servers.md) | ✅ Phase 5 |
 | [web-server.md](web-server.md) | ✅ Phase 5 |
-| customization-guide.md / glossary.md / fork-notes.md | ⏳ planned |
+| [customization-guide.md](customization-guide.md) | ✅ Phase 6 |
+| [glossary.md](glossary.md) | ✅ Phase 6 |
+| [fork-notes.md](fork-notes.md) | ✅ Phase 6 |
 
 ## Key facts at a glance
 
