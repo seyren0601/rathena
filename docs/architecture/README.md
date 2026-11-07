@@ -61,6 +61,8 @@ The phase 2 core documents, best read in this order: [startup-and-initialization
 | [customization-guide.md](customization-guide.md) | ✅ Phase 6 |
 | [glossary.md](glossary.md) | ✅ Phase 6 |
 | [fork-notes.md](fork-notes.md) | ✅ Phase 6 |
+| [../subsystems/map/character-progression-and-job-records.md](../subsystems/map/character-progression-and-job-records.md) | ✅ Deep dive (see [../DOCUMENTATION_PROGRESS.md](../DOCUMENTATION_PROGRESS.md)) |
+| [../subsystems/map/job-record-system-design.md](../subsystems/map/job-record-system-design.md) | 📝 Design proposal |
 
 ## Key facts at a glance
 

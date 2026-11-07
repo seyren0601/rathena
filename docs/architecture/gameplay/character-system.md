@@ -86,7 +86,7 @@ Conversions: `pc_jobid2mapid(job)` (`pc.cpp:7519`), `pc_mapid2jobid(mapid, sex)`
 
 ### Changing job
 
-✅ `pc_jobchange(sd, job, upper)` (`pc.cpp:10846`), used by job-change NPCs (`jobchange` script command) and `@job`. It validates the job, sets `status.class_` and `sd->class_`, adjusts levels and skill points, recalculates the skill tree (`pc_calc_skilltree`, `:2601`), sends the look and status updates, refreshes party, guild and clan member info, then `status_calc_pc`. The job master NPC in this fork (`npc/custom/jobmaster.txt`) uses this path.
+✅ `pc_jobchange(sd, job, upper)` (`pc.cpp:10846`), used by job-change NPCs (`jobchange` script command) and `@job`. It validates the job, sets `status.class_` and `sd->class_`, resets the job level to 1 (and caps the base level at the new job's `MaxBaseLevel`, which also resets stats). It does **not** reset or refund skill points: skills outside the new tree lose their `id` and are not saved (see [deep dive §2.3](../../subsystems/map/character-progression-and-job-records.md#23-what-pc_jobchange-does-to-skills-and-what-it-doesnt)). It then recalculates the skill tree (`pc_calc_skilltree`, `:2601`), sends the look and status updates, refreshes party, guild and clan member info, then `status_calc_pc`. The job master NPC in this fork (`npc/custom/jobmaster.txt`) uses this path.
 
 ## 4. Levels, experience and points
 
