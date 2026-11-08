@@ -9,3 +9,4 @@
  **/
 
 //ACMD_DEF(newcommand),
+ACMD_DEF(jobrecordinfo), // [Job Record]

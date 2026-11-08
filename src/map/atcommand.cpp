@@ -37,6 +37,7 @@
 #include "instance.hpp"
 #include "intif.hpp"
 #include "itemdb.hpp" // MAX_ITEMGROUP
+#include "jobrecord.hpp" // [Job Record] used by src/custom/atcommand.inc
 #include "cashshop.hpp"
 #include "log.hpp"
 #include "mail.hpp"

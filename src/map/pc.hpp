@@ -816,6 +816,9 @@ public:
 		struct achievement *achievements; ///< Achievement log entries
 	} achievement_data;
 
+	// [Job Record] per-player state, see jobrecord.hpp (shared_ptr: the type is incomplete here)
+	std::shared_ptr<struct s_job_record_session> job_record;
+
 	// Title system
 	std::vector<int32> titles;
 

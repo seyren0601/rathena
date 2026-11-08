@@ -77,6 +77,9 @@
     <ClInclude Include="itemdb.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="jobrecord.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="log.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -209,6 +212,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="itemdb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="jobrecord.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="log.cpp">

@@ -47,6 +47,7 @@
 #include "instance.hpp"
 #include "intif.hpp"
 #include "itemdb.hpp" // MAX_ITEMGROUP
+#include "jobrecord.hpp" // [Job Record]
 #include "log.hpp"
 #include "map.hpp"
 #include "mercenary.hpp"
@@ -2480,6 +2481,7 @@ void pc_reg_received(map_session_data *sd)
 #endif
 	intif_Mail_requestinbox(sd->status.char_id, 0, MAIL_INBOX_NORMAL); // MAIL SYSTEM - Request Mail Inbox
 	intif_request_questlog(sd);
+	jobrecord_request_list(*sd); // [Job Record]
 
 	if (battle_config.feature_achievement) {
 		sd->achievement_data.total_score = 0;

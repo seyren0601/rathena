@@ -23,6 +23,7 @@
 #include "homunculus.hpp"
 #include "instance.hpp"
 #include "intif.hpp"
+#include "jobrecord.hpp" // [Job Record]
 #include "log.hpp"
 #include "map.hpp"
 #include "mercenary.hpp"
@@ -296,6 +297,9 @@ int32 chrif_save(map_session_data *sd, int32 flag) {
 
 	if (sd->storage.dirty)
 		storage_storagesave(sd);
+	// [Job Record] record saves go before the inventory: stash rows are only ever added here,
+	// so a crash between the two saves can duplicate an item but never lose it
+	jobrecord_save_before_inventory(*sd);
 	if (flag&CSAVE_INVENTORY)
 		intif_storage_save(sd,&sd->inventory);
 	if (flag&CSAVE_CART)
@@ -339,6 +343,9 @@ int32 chrif_save(map_session_data *sd, int32 flag) {
 		intif_quest_save(sd);
 	if (sd->achievement_data.save)
 		intif_achievement_save(sd);
+
+	// [Job Record] the commit goes last: it removes stash rows, so it must follow the inventory and status saves
+	jobrecord_save_after_status(*sd);
 
 	return 0;
 }
