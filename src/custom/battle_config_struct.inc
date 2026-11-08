@@ -12,3 +12,8 @@
  *	 <datatype> name;
  **/
 
+// [Job Record] conf/battle/job_record.conf
+int32 job_record_max;
+int32 job_record_cooldown;
+int32 job_record_combat_delay;
+

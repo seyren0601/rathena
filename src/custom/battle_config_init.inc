@@ -11,3 +11,8 @@
  *	 { "name", &battle_config.<variable name>, <default value>, <minimum value>, <maximum value> },
  **/
 
+	// [Job Record] conf/battle/job_record.conf
+	{ "job_record_max",                     &battle_config.job_record_max,                  20,     0,      INT_MAX,        },
+	{ "job_record_cooldown",                &battle_config.job_record_cooldown,             30000,  0,      INT_MAX,        },
+	{ "job_record_combat_delay",            &battle_config.job_record_combat_delay,         10000,  0,      INT_MAX,        },
+

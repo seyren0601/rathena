@@ -42,8 +42,11 @@ extern int32 char_fd; // inter-server link, see intif.cpp
 
 /// Re-send an unacknowledged write after this long (covers writes lost in a dead socket)
 #define JOBRECORD_RESEND_TIMEOUT 30000
-/// Maximum number of records per character (made configurable in phase 7)
-#define JOBRECORD_MAX_RECORDS 20
+/// Give up on a record load that gets no answer after this long
+#define JOBRECORD_LOAD_TIMEOUT 10000
+/// Permanent character variable holding the end of the cooldown (Unix time). Not in the whitelist,
+/// so it is shared by all records and survives relogging.
+#define JOBRECORD_COOLDOWN_VAR "JR_COOLDOWN"
 /// Name given to the character's state the first time it is saved as a record
 #define JOBRECORD_DEFAULT_NAME "Default"
 
@@ -158,7 +161,41 @@ bool JobRecordVarDatabase::matchesQuest( int32 quest_id ) const{
 
 JobRecordVarDatabase job_record_var_db;
 
+/// A record load got no answer (dead socket, char-server restart): back to idle, nothing changed yet
+static TIMER_FUNC( jobrecord_load_timeout ){
+	map_session_data* sd = map_id2sd( id );
+
+	if( sd == nullptr || sd->job_record == nullptr || sd->job_record->load_timer != tid ){
+		return 0;
+	}
+
+	s_job_record_session& jr = *sd->job_record;
+
+	jr.load_timer = INVALID_TIMER;
+
+	if( jr.state != JOBRECORD_STATE_LOADING || jr.loading_id != static_cast<uint32>( data ) ){
+		return 0;
+	}
+
+	ShowWarning( "Job record %u of character %u: no answer from the char-server, giving up.\n", jr.loading_id, sd->status.char_id );
+
+	jr.state = JOBRECORD_STATE_IDLE;
+	jr.loading = nullptr;
+	jr.loading_id = 0;
+
+	if( jr.recovery != JOBRECORD_RECOVERY_NONE ){
+		// The journal stays set, the recovery is tried again at the next login
+		jr.recovery = JOBRECORD_RECOVERY_NONE;
+		clif_displaymessage( sd->fd, "Job record: your last record switch could not be checked, please relog." );
+	}else{
+		clif_displaymessage( sd->fd, "Job record: the character server did not answer, try again later." );
+	}
+
+	return 0;
+}
+
 void do_init_jobrecord(){
+	add_timer_func_list( jobrecord_load_timeout, "jobrecord_load_timeout" );
 	job_record_var_db.load();
 }
 
@@ -603,7 +640,10 @@ bool jobrecord_apply( map_session_data& sd, const s_job_record_full& r ){
 		return false;
 	}
 
-	// 1. Leave states that belong to the previous record
+	// 1. Leave states that belong to the previous record: buffs of the current skill tree
+	//    (pc_jobchange only ends them when the tree changes), copied skills, mounts, companions
+	status_db.changeSkillTree( &sd );
+
 	if( sd.cloneskill_idx > 0 ){
 		pc_skill_plagiarism_reset( sd, 1 );
 	}
@@ -988,6 +1028,10 @@ void jobrecord_activate( map_session_data& sd, s_job_record_session& jr, uint32 
 	chrif_save( &sd, CSAVE_INVENTORY );
 }
 
+// Guards, defined further down
+const char* jobrecord_check_conditions( map_session_data& sd );
+void jobrecord_start_cooldown( map_session_data& sd );
+
 /// Completes a switch once the target record has been loaded
 void jobrecord_finish_switch( map_session_data& sd, s_job_record_session& jr, const s_job_record_full& target ){
 	char output[CHAT_SIZE_MAX];
@@ -1013,8 +1057,8 @@ void jobrecord_finish_switch( map_session_data& sd, s_job_record_session& jr, co
 	jobrecord_predict( sd, target.base.class_, target.base.str, skill_lv[0], skill_lv[1], incoming_weight,
 		static_cast<uint16>( target.items.size() ), preview );
 
-	if( !chrif_isconnected() || pc_isdead( &sd ) ){
-		error = "Job record: switch cancelled.";
+	if( const char* condition = jobrecord_check_conditions( sd ); condition != nullptr ){
+		error = condition;
 	}else if( !job_db.exists( target.base.class_ ) ){
 		error = "Job record: this record could not be applied.";
 	}else if( const char* limit = jobrecord_check_preview( preview ); limit != nullptr ){
@@ -1045,6 +1089,7 @@ void jobrecord_finish_switch( map_session_data& sd, s_job_record_session& jr, co
 	used.base.last_used = jobrecord_now();
 	jobrecord_update_summary( jr, used );
 	jobrecord_activate( sd, jr, target.base.record_id, target.base.record_id );
+	jobrecord_start_cooldown( sd );
 	jr.state = JOBRECORD_STATE_IDLE;
 
 	safesnprintf( output, sizeof( output ), "Job record: switched to '%s' (%s, base %u, job %u).",
@@ -1052,13 +1097,126 @@ void jobrecord_finish_switch( map_session_data& sd, s_job_record_session& jr, co
 	clif_displaymessage( sd.fd, output );
 }
 
+/// Whether the character's live progress is exactly a record's (the target of an interrupted switch)
+bool jobrecord_matches_live( const map_session_data& sd, const s_job_record_base& b ){
+	const mmo_charstatus& st = sd.status;
+
+	return st.class_ == b.class_ && st.base_level == b.base_level && st.base_exp == b.base_exp
+		&& st.job_level == b.job_level && st.job_exp == b.job_exp
+		&& st.skill_point == b.skill_point && st.status_point == b.status_point
+		&& st.str == b.str && st.agi == b.agi && st.vit == b.vit && st.int_ == b.int_ && st.dex == b.dex && st.luk == b.luk;
+}
+
+/// Removes items from the inventory (the target's stash after a rolled back switch: the rows are still in its stash)
+void jobrecord_remove_owned( map_session_data& sd, const std::vector<item>& items ){
+	for( const item& it : items ){
+		if( it.unique_id == 0 ){
+			continue;
+		}
+
+		for( int32 i = 0; i < MAX_INVENTORY; i++ ){
+			if( sd.inventory.u.items_inventory[i].nameid != 0 && sd.inventory.u.items_inventory[i].unique_id == it.unique_id ){
+				ShowWarning( "Job record: removing item %u (unique id %" PRIu64 ") of character %u, it is still stashed in the target record.\n",
+					it.nameid, it.unique_id, sd.status.char_id );
+				pc_delitem( &sd, i, sd.inventory.u.items_inventory[i].amount, 0, 0, LOG_TYPE_OTHER );
+				break;
+			}
+		}
+	}
+}
+
+/// Starts checking a switch that was interrupted (journal still set at login, §9.2 of the design).
+/// The source is the active record; on a character's first record both ids were allocated together.
+void jobrecord_start_recovery( map_session_data& sd, s_job_record_session& jr ){
+	jr.recovery_from = jr.active_record != 0 ? jr.active_record : jr.pending_to - 1;
+	jr.recovery = JOBRECORD_RECOVERY_TARGET;
+	jr.recovery_target_items.clear();
+
+	ShowWarning( "Job record: character %u has an interrupted switch from record %u to %u, checking it.\n",
+		sd.status.char_id, jr.recovery_from, jr.pending_to );
+
+	if( !jobrecord_request_load( sd, jr.pending_to ) ){
+		jr.recovery = JOBRECORD_RECOVERY_NONE;
+	}
+}
+
+/// Continues the recovery with a loaded (or missing) record
+void jobrecord_continue_recovery( map_session_data& sd, s_job_record_session& jr, e_job_record_load_result result, std::shared_ptr<s_job_record_full> loaded ){
+	char output[CHAT_SIZE_MAX];
+
+	if( jr.recovery == JOBRECORD_RECOVERY_TARGET ){
+		if( result == JOBRECORD_LOAD_OK && loaded != nullptr && jobrecord_matches_live( sd, loaded->base ) ){
+			// The switch had completed, only the commit was lost: finish it
+			uint32 target_id = loaded->base.record_id;
+
+			jr.recovery = JOBRECORD_RECOVERY_NONE;
+			jr.state = JOBRECORD_STATE_APPLYING;
+			jobrecord_unstash_equipment( sd, loaded->items, loaded->base.name ); // Already owned items are skipped
+			jobrecord_activate( sd, jr, target_id, target_id );
+			jr.state = JOBRECORD_STATE_IDLE;
+
+			ShowInfo( "Job record: interrupted switch of character %u completed (record %u).\n", sd.status.char_id, target_id );
+			return;
+		}
+
+		// Not completed (or the target does not exist): put the source record back
+		if( result == JOBRECORD_LOAD_OK && loaded != nullptr ){
+			jr.recovery_target_items = loaded->items;
+		}
+
+		jr.recovery = JOBRECORD_RECOVERY_SOURCE;
+
+		if( !jobrecord_request_load( sd, jr.recovery_from ) ){
+			jr.recovery = JOBRECORD_RECOVERY_NONE;
+		}
+		return;
+	}
+
+	// JOBRECORD_RECOVERY_SOURCE
+	jr.recovery = JOBRECORD_RECOVERY_NONE;
+
+	if( result != JOBRECORD_LOAD_OK || loaded == nullptr ){
+		ShowError( "Job record: the source record %u of character %u could not be loaded, the interrupted switch stays pending.\n", jr.recovery_from, sd.status.char_id );
+		clif_displaymessage( sd.fd, "Job record: your last record switch could not be restored, please contact a GM." );
+		return;
+	}
+
+	jr.state = JOBRECORD_STATE_APPLYING;
+
+	// The source record was saved before anything changed, so it is the exact state before the switch
+	jobrecord_remove_owned( sd, jr.recovery_target_items );
+	jr.recovery_target_items.clear();
+
+	if( jobrecord_apply( sd, *loaded ) ){
+		jobrecord_unstash_equipment( sd, loaded->items, loaded->base.name ); // Already owned items are skipped
+	}
+
+	jobrecord_update_summary( jr, *loaded );
+	jobrecord_activate( sd, jr, loaded->base.record_id, loaded->base.record_id );
+	jr.state = JOBRECORD_STATE_IDLE;
+
+	ShowWarning( "Job record: interrupted switch of character %u rolled back to record %u.\n", sd.status.char_id, loaded->base.record_id );
+	safesnprintf( output, sizeof( output ), "Job record: your last record switch was interrupted, '%s' has been restored.", loaded->base.name );
+	clif_displaymessage( sd.fd, output );
+}
+
 /// Called when a requested record has been fully received (or failed to load)
 void jobrecord_on_loaded( map_session_data& sd, s_job_record_session& jr, e_job_record_load_result result ){
 	std::shared_ptr<s_job_record_full> loaded = jr.loading;
 
+	if( jr.load_timer != INVALID_TIMER ){
+		delete_timer( jr.load_timer, jobrecord_load_timeout );
+		jr.load_timer = INVALID_TIMER;
+	}
+
 	jr.loading = nullptr;
 	jr.loading_id = 0;
 	jr.state = JOBRECORD_STATE_IDLE;
+
+	if( jr.recovery != JOBRECORD_RECOVERY_NONE ){
+		jobrecord_continue_recovery( sd, jr, result, loaded );
+		return;
+	}
 
 	if( result != JOBRECORD_LOAD_OK || loaded == nullptr ){
 		ShowWarning( "Job record of character %u could not be loaded (result %d).\n", sd.status.char_id, result );
@@ -1092,14 +1250,46 @@ const char* jobrecord_check_name( const s_job_record_session& jr, const char* na
 	return nullptr;
 }
 
-/// Basic guards (phase 4). Cooldown, combat and map restrictions are added in phase 7.
-const char* jobrecord_check_can_act( map_session_data& sd ){
-	if( sd.job_record == nullptr || sd.job_record->state == JOBRECORD_STATE_UNLOADED ){
-		return "Your job records are still loading.";
+/// Seconds left on the cooldown (0 when an action is allowed)
+uint32 jobrecord_cooldown_left( map_session_data& sd ){
+	int64 until = pc_readglobalreg( &sd, add_str( JOBRECORD_COOLDOWN_VAR ) );
+	int64 now = jobrecord_now();
+
+	return until > now ? static_cast<uint32>( until - now ) : 0;
+}
+
+/// Starts the cooldown once an action has finished (decision 16 of the design)
+void jobrecord_start_cooldown( map_session_data& sd ){
+	if( battle_config.job_record_cooldown <= 0 ){
+		return;
 	}
-	if( sd.job_record->state != JOBRECORD_STATE_IDLE ){
-		return "A job record action is already in progress.";
+
+	int64 seconds = ( battle_config.job_record_cooldown + 999 ) / 1000;
+
+	pc_setglobalreg( &sd, add_str( JOBRECORD_COOLDOWN_VAR ), jobrecord_now() + seconds );
+}
+
+/// Whether the player attacked, used a skill or was hit recently (tracked for the logout delay)
+bool jobrecord_in_combat( const map_session_data& sd ){
+	return battle_config.job_record_combat_delay > 0 && sd.canlog_tick != 0
+		&& DIFF_TICK( gettick(), sd.canlog_tick ) < battle_config.job_record_combat_delay;
+}
+
+/// GvG/WoE maps, battlegrounds and instances (decision 11 of the design)
+bool jobrecord_map_blocked( const map_session_data& sd ){
+	struct map_data* mapdata = map_getmapdata( sd.m );
+
+	if( mapdata == nullptr ){
+		return true;
 	}
+
+	return mapdata->instance_id > 0
+		|| mapdata->getMapFlag( MF_GVG ) || mapdata->getMapFlag( MF_GVG_CASTLE ) || mapdata->getMapFlag( MF_GVG_DUNGEON )
+		|| mapdata->getMapFlag( MF_GVG_TE ) || mapdata->getMapFlag( MF_GVG_TE_CASTLE ) || mapdata->getMapFlag( MF_BATTLEGROUND );
+}
+
+/// Conditions that must hold both when an action is requested and when it is carried out
+const char* jobrecord_check_conditions( map_session_data& sd ){
 	if( !chrif_isconnected() ){
 		return "The character server is unavailable, try again later.";
 	}
@@ -1109,8 +1299,35 @@ const char* jobrecord_check_can_act( map_session_data& sd ){
 	if( sd.state.vending || sd.state.buyingstore || sd.state.trading || sd.state.storage_flag || sd.chatID ){
 		return "Close your shop, trade, storage or chat first.";
 	}
+	if( jobrecord_in_combat( sd ) ){
+		return "You cannot do this during combat.";
+	}
+	if( jobrecord_map_blocked( sd ) ){
+		return "You cannot do this on this map.";
+	}
 
 	return nullptr;
+}
+
+/// Guards of create, switch and delete
+const char* jobrecord_check_can_act( map_session_data& sd ){
+	static char message[CHAT_SIZE_MAX];
+
+	if( sd.job_record == nullptr || sd.job_record->state == JOBRECORD_STATE_UNLOADED ){
+		return "Your job records are still loading.";
+	}
+	if( sd.job_record->recovery != JOBRECORD_RECOVERY_NONE ){
+		return "Your last record switch is being restored, please wait.";
+	}
+	if( sd.job_record->state != JOBRECORD_STATE_IDLE ){
+		return "A job record action is already in progress.";
+	}
+	if( uint32 left = jobrecord_cooldown_left( sd ); left > 0 ){
+		safesnprintf( message, sizeof( message ), "Please wait %u more second(s).", left );
+		return message;
+	}
+
+	return jobrecord_check_conditions( sd );
 }
 
 /// Finds the online character of a char-server reply that belongs to this session's player
@@ -1165,6 +1382,11 @@ bool jobrecord_request_load( map_session_data& sd, uint32 record_id ){
 	jr.state = JOBRECORD_STATE_LOADING;
 	jr.loading_id = record_id;
 	jr.loading = std::make_shared<s_job_record_full>();
+
+	if( jr.load_timer != INVALID_TIMER ){
+		delete_timer( jr.load_timer, jobrecord_load_timeout );
+	}
+	jr.load_timer = add_timer( gettick() + JOBRECORD_LOAD_TIMEOUT, jobrecord_load_timeout, sd.id, record_id );
 
 	WFIFOHEAD( char_fd, 10 );
 	WFIFOW( char_fd, 0 ) = JOBRECORD_LOAD_REQ;
@@ -1238,7 +1460,7 @@ const char* jobrecord_create( map_session_data& sd, const char* name, bool doram
 	// The current progress becomes a record too when there is none yet
 	size_t total = jr.records.size() + 1 + ( jr.active_record == 0 ? 1 : 0 );
 
-	if( total > JOBRECORD_MAX_RECORDS ){
+	if( battle_config.job_record_max > 0 && total > static_cast<size_t>( battle_config.job_record_max ) ){
 		return "You already have the maximum number of records.";
 	}
 
@@ -1280,6 +1502,7 @@ const char* jobrecord_create( map_session_data& sd, const char* name, bool doram
 	jobrecord_update_summary( jr, created );
 	jobrecord_queue_upsert( sd, created, end ); // So the record exists in the list from now on
 	jobrecord_activate( sd, jr, new_id, 0 ); // A new record has no stash
+	jobrecord_start_cooldown( sd );
 	jr.state = JOBRECORD_STATE_IDLE;
 
 	return nullptr;
@@ -1451,6 +1674,11 @@ void jobrecord_parse_list_ack( int32 fd ){
 
 	ShowInfo( "Job records of character %u loaded: %u record(s), active %u%s.\n", char_id, static_cast<uint32>( jr.records.size() ), jr.active_record,
 		jr.pending_to != 0 ? " (interrupted switch pending)" : "" );
+
+	// Interrupted switch: check it before anything else can happen (§9.2 of the design)
+	if( jr.pending_to != 0 && jr.state == JOBRECORD_STATE_IDLE && jr.recovery == JOBRECORD_RECOVERY_NONE ){
+		jobrecord_start_recovery( *sd, jr );
+	}
 }
 
 /// JOBRECORD_LOAD_ACK

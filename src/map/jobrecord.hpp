@@ -30,6 +30,13 @@ enum e_job_record_state : uint8 {
 	JOBRECORD_STATE_DELETING,     ///< Waiting for a delete acknowledgement
 };
 
+/// Recovery of a switch that was interrupted (switch journal still set at login, §9.2 of the design)
+enum e_job_record_recovery : uint8 {
+	JOBRECORD_RECOVERY_NONE = 0,
+	JOBRECORD_RECOVERY_TARGET, ///< Loading the target record to see whether the switch had completed
+	JOBRECORD_RECOVERY_SOURCE, ///< Loading the source record to put it back
+};
+
 /// One complete record (inactive record data, as stored by the char-server)
 struct s_job_record_full {
 	s_job_record_base base{};
@@ -66,6 +73,12 @@ struct s_job_record_session {
 	// JOBRECORD_LOAD_REQ in progress
 	uint32 loading_id = 0;
 	std::shared_ptr<s_job_record_full> loading;
+	int32 load_timer = INVALID_TIMER; ///< Gives up on a load that gets no answer
+
+	// Interrupted switch recovery
+	e_job_record_recovery recovery = JOBRECORD_RECOVERY_NONE;
+	uint32 recovery_from = 0;              ///< Record that was active before the interrupted switch
+	std::vector<item> recovery_target_items; ///< Stash of the target, removed from the inventory when rolling back
 
 	// Writes waiting for an acknowledgement (§9.2 of the design: resend until ACK)
 	std::vector<s_job_record_pending_upsert> pending_upserts; ///< Sent before the inventory save
