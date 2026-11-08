@@ -73,7 +73,8 @@ struct s_job_record_session {
 	// JOBRECORD_LOAD_REQ in progress
 	uint32 loading_id = 0;
 	std::shared_ptr<s_job_record_full> loading;
-	int32 load_timer = INVALID_TIMER; ///< Gives up on a load that gets no answer
+	int32 load_timer = INVALID_TIMER; ///< Gives up on a load (or a delete) that gets no answer
+	uint32 deleting_id = 0;           ///< JOBRECORD_DELETE in progress
 
 	// Interrupted switch recovery
 	e_job_record_recovery recovery = JOBRECORD_RECOVERY_NONE;
@@ -134,6 +135,7 @@ void jobrecord_request_list( map_session_data& sd );
 const char* jobrecord_start_switch( map_session_data& sd, uint32 record_id );
 const char* jobrecord_create( map_session_data& sd, const char* name, bool doram );
 const char* jobrecord_rename( map_session_data& sd, uint32 record_id, const char* name );
+const char* jobrecord_delete( map_session_data& sd, uint32 record_id );
 const char* jobrecord_can_act( map_session_data& sd );
 uint32 jobrecord_get_cooldown( map_session_data& sd );
 const char* jobrecord_preview( map_session_data& sd, uint32 record_id, s_job_record_preview& out );
@@ -155,6 +157,7 @@ void jobrecord_parse_load_ack( int32 fd );
 void jobrecord_parse_upsert_ack( int32 fd );
 void jobrecord_parse_commit_ack( int32 fd );
 void jobrecord_parse_rename_ack( int32 fd );
+void jobrecord_parse_delete_ack( int32 fd );
 
 // Debug output for @jobrecordinfo and @jobrecord vars
 void jobrecord_show_info( map_session_data& sd, int32 fd );

@@ -167,6 +167,22 @@ BUILDIN_FUNC(jobrecord_create)
 	return SCRIPT_CMD_SUCCESS;
 }
 
+/// jobrecord_delete(<record id>)
+/// Deletes a saved record (not the active one). Its equipment is mailed to the character. The result
+/// arrives a moment later and is shown to the player. Returns 1 when requested, otherwise 0 and the
+/// reason in @jobrecord_error$.
+BUILDIN_FUNC(jobrecord_delete)
+{
+	map_session_data* sd;
+
+	if( !script_rid2sd( sd ) ){
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	jobrecord_script_result( st, sd, jobrecord_delete( *sd, static_cast<uint32>( script_getnum( st, 2 ) ) ) );
+	return SCRIPT_CMD_SUCCESS;
+}
+
 /// jobrecord_rename(<record id>,"<name>")
 /// Returns 1 on success, otherwise 0 and the reason in @jobrecord_error$.
 BUILDIN_FUNC(jobrecord_rename)

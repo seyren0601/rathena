@@ -19,6 +19,7 @@
 //= jobrecord_switch(<id>)             starts a switch
 //= jobrecord_create("<name>",<doram>) creates a new record
 //= jobrecord_rename(<id>,"<name>")    renames a record
+//= jobrecord_delete(<id>)             deletes a record, mails its equipment
 //= On failure the reason is in @jobrecord_error$.
 //============================================================
 
@@ -49,7 +50,7 @@ function	script	F_JobRecord	{
 		}
 		mes "Records: " + @jobrecord_count + ((.@max > 0) ? " / " + .@max : "");
 
-		switch (select("Switch to another record:Create a new record:Rename a record:Close")) {
+		switch (select("Switch to another record:Create a new record:Rename a record:Delete a record:Close")) {
 		case 1:
 			callsub L_Switch;
 			break;
@@ -58,6 +59,9 @@ function	script	F_JobRecord	{
 			break;
 		case 3:
 			callsub L_Rename;
+			break;
+		case 4:
+			callsub L_Delete;
 			break;
 		default:
 			close;
@@ -237,6 +241,47 @@ L_Rename:
 	}
 	mes "The record is now called ^0055FF" + .@name$ + "^000000.";
 	return;
+
+L_Delete:
+	.@npc$ = "[Job Record Book]"; // callsub has its own .@ scope
+	next;
+	mes .@npc$;
+	if (!jobrecord_canact()) {
+		mes @jobrecord_error$;
+		return;
+	}
+	mes "Which record do you want to delete?";
+	mes "The active record cannot be deleted.";
+
+	.@r = callsub(L_Pick, 1);
+	if (.@r < 0)
+		return;
+
+	next;
+	mes .@npc$;
+	mes "Delete ^FF0000" + @jobrecord_name$[.@r] + "^000000?";
+	mes "(" + jobname(@jobrecord_class[.@r]) + ", Base " + @jobrecord_baselv[.@r] + " / Job " + @jobrecord_joblv[.@r] + ")";
+	mes "Its levels, stats, skills and job-quest progress are lost.";
+	mes "Its equipment, costumes included, is sent to your mailbox.";
+	if (select("Delete this record:Cancel") == 2)
+		return;
+
+	next;
+	mes .@npc$;
+	mes "^FF0000This cannot be undone.^000000";
+	mes "Are you really sure you want to delete ^FF0000" + @jobrecord_name$[.@r] + "^000000?";
+	if (select("Yes, delete it:No") == 2)
+		return;
+
+	if (!jobrecord_delete(@jobrecord_id[.@r])) {
+		next;
+		mes .@npc$;
+		mes @jobrecord_error$;
+		return;
+	}
+
+	// The result is shown in the chat window once the character server has deleted the record
+	close;
 }
 
 // Gives every character its bound Job Record Book (new characters and existing ones)

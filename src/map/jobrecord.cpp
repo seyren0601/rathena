@@ -173,6 +173,16 @@ static TIMER_FUNC( jobrecord_load_timeout ){
 
 	jr.load_timer = INVALID_TIMER;
 
+	if( jr.state == JOBRECORD_STATE_DELETING && jr.deleting_id == static_cast<uint32>( data ) ){
+		// The delete may still have happened: reload the list to find out
+		ShowWarning( "Job record %u of character %u: no answer to the delete, reloading the list.\n", jr.deleting_id, sd->status.char_id );
+		jr.deleting_id = 0;
+		jr.state = JOBRECORD_STATE_IDLE;
+		clif_displaymessage( sd->fd, "Job record: the character server did not answer, please check your records again." );
+		jobrecord_request_list( *sd );
+		return 0;
+	}
+
 	if( jr.state != JOBRECORD_STATE_LOADING || jr.loading_id != static_cast<uint32>( data ) ){
 		return 0;
 	}
@@ -1508,6 +1518,48 @@ const char* jobrecord_create( map_session_data& sd, const char* name, bool doram
 	return nullptr;
 }
 
+/// Deletes a saved record. Its equipment is mailed to the character by the char-server.
+/// The active record cannot be deleted (switch to another record first).
+/// @return nullptr when requested, otherwise a message for the player
+const char* jobrecord_delete( map_session_data& sd, uint32 record_id ){
+	if( const char* error = jobrecord_check_can_act( sd ); error != nullptr ){
+		return error;
+	}
+
+	s_job_record_session& jr = *sd.job_record;
+
+	if( record_id == jr.active_record ){
+		return "You cannot delete the active record, switch to another record first.";
+	}
+	if( jobrecord_find_summary( jr, record_id ) == nullptr ){
+		return "This record does not exist.";
+	}
+
+	// Saves of this record still waiting for the char-server would recreate it after the delete
+	for( const s_job_record_pending_upsert& p : jr.pending_upserts ){
+		if( p.data.base.record_id == record_id ){
+			return "This record is still being saved, try again in a moment.";
+		}
+	}
+
+	jr.state = JOBRECORD_STATE_DELETING;
+	jr.deleting_id = record_id;
+
+	if( jr.load_timer != INVALID_TIMER ){
+		delete_timer( jr.load_timer, jobrecord_load_timeout );
+	}
+	jr.load_timer = add_timer( gettick() + JOBRECORD_LOAD_TIMEOUT, jobrecord_load_timeout, sd.id, record_id );
+
+	WFIFOHEAD( char_fd, 10 + NAME_LENGTH );
+	WFIFOW( char_fd, 0 ) = JOBRECORD_DELETE;
+	WFIFOL( char_fd, 2 ) = sd.status.char_id;
+	WFIFOL( char_fd, 6 ) = record_id;
+	safestrncpy( WFIFOCP( char_fd, 10 ), sd.status.name, NAME_LENGTH );
+	WFIFOSET( char_fd, 10 + NAME_LENGTH );
+
+	return nullptr;
+}
+
 /// Whether a create, switch or delete is possible right now (for menus, before asking for details)
 /// @return nullptr when possible, otherwise a message for the player
 const char* jobrecord_can_act( map_session_data& sd ){
@@ -1822,6 +1874,58 @@ void jobrecord_parse_rename_ack( int32 fd ){
 	}
 
 	// The local list was already updated when the rename was requested (jobrecord_rename)
+}
+
+/// JOBRECORD_DELETE_ACK
+void jobrecord_parse_delete_ack( int32 fd ){
+	uint32 char_id = RFIFOL( fd, 2 );
+	uint32 record_id = RFIFOL( fd, 6 );
+	bool success = RFIFOB( fd, 10 ) != 0;
+	uint16 mails = RFIFOW( fd, 11 );
+	map_session_data* sd = jobrecord_reply_owner( char_id );
+	char output[CHAT_SIZE_MAX];
+
+	if( sd == nullptr ){
+		return;
+	}
+
+	s_job_record_session& jr = *sd->job_record;
+
+	if( jr.state != JOBRECORD_STATE_DELETING || jr.deleting_id != record_id ){
+		return; // Stale reply (after a timeout the list was reloaded)
+	}
+
+	if( jr.load_timer != INVALID_TIMER ){
+		delete_timer( jr.load_timer, jobrecord_load_timeout );
+		jr.load_timer = INVALID_TIMER;
+	}
+
+	jr.deleting_id = 0;
+	jr.state = JOBRECORD_STATE_IDLE;
+
+	if( !success ){
+		clif_displaymessage( sd->fd, "Job record: the record could not be deleted." );
+		return;
+	}
+
+	std::string name;
+
+	for( auto it = jr.records.begin(); it != jr.records.end(); ++it ){
+		if( it->base.record_id == record_id ){
+			name = it->base.name;
+			jr.records.erase( it );
+			break;
+		}
+	}
+
+	jobrecord_start_cooldown( *sd );
+
+	if( mails > 0 ){
+		safesnprintf( output, sizeof( output ), "Job record: '%s' was deleted, its equipment was sent to your mailbox (%u mail(s)).", name.c_str(), mails );
+	}else{
+		safesnprintf( output, sizeof( output ), "Job record: '%s' was deleted.", name.c_str() );
+	}
+	clif_displaymessage( sd->fd, output );
 }
 
 /*==========================================

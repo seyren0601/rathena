@@ -27,6 +27,7 @@
 
 #include "char.hpp"
 #include "inter.hpp"
+#include "int_mail.hpp" // mapif_Mail_new
 
 namespace {
 
@@ -847,6 +848,228 @@ void mapif_parse_jobrecord_rename( int32 fd ){
 	mapif_jobrecord_ack( fd, JOBRECORD_RENAME_ACK, char_id, record_id, success );
 }
 
+/*==========================================
+ * Deleting a record (phase 9)
+ *------------------------------------------*/
+
+/// Unique ids of the items the character already owns: inventory, cart and the account's storages
+bool jobrecord_owned_unique_ids( uint32 char_id, std::unordered_set<uint64>& out ){
+	uint32 account_id = 0;
+
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `account_id` FROM `%s` WHERE `char_id` = '%u'", schema_config.char_db, char_id ) ){
+		Sql_ShowDebug( sql_handle );
+		return false;
+	}
+	if( SQL_SUCCESS == Sql_NextRow( sql_handle ) ){
+		char* data;
+
+		Sql_GetData( sql_handle, 0, &data, nullptr );
+		account_id = strtoul( data, nullptr, 10 );
+	}
+	Sql_FreeResult( sql_handle );
+
+	auto collect = [&out]( const char* table, const char* owner_column, uint32 owner ) -> bool {
+		if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `unique_id` FROM `%s` WHERE `%s` = '%u' AND `unique_id` <> '0'", table, owner_column, owner ) ){
+			Sql_ShowDebug( sql_handle );
+			return false;
+		}
+
+		while( SQL_SUCCESS == Sql_NextRow( sql_handle ) ){
+			char* data;
+
+			Sql_GetData( sql_handle, 0, &data, nullptr );
+			out.insert( strtoull( data, nullptr, 10 ) );
+		}
+
+		Sql_FreeResult( sql_handle );
+		return true;
+	};
+
+	if( !collect( schema_config.inventory_db, "char_id", char_id ) || !collect( schema_config.cart_db, "char_id", char_id ) ){
+		return false;
+	}
+
+	if( account_id != 0 ){
+		for( const auto& storage : interServerDb ){
+			if( !collect( storage.second->table, "account_id", account_id ) ){
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+/// Inserts one mail with its attachments. Same SQL as mail_savemessage, but without its own
+/// transaction: the caller's transaction must cover the mail and the deletion of the stash rows.
+bool jobrecord_mail_tosql( mail_message& msg ){
+	SqlStmt stmt{ *sql_handle };
+	StringBuf buf;
+	int32 j;
+
+	StringBuf_Init( &buf );
+	StringBuf_Printf( &buf, "INSERT INTO `%s` (`send_name`, `send_id`, `dest_name`, `dest_id`, `title`, `message`, `time`, `status`, `zeny`,`type`)"
+		" VALUES (?, '%d', ?, '%d', ?, ?, '%lu', '%d', '%d', '%d')", schema_config.mail_db,
+		msg.send_id, msg.dest_id, (unsigned long)msg.timestamp, msg.status, msg.zeny, msg.type );
+
+	if( SQL_SUCCESS != stmt.PrepareStr( StringBuf_Value( &buf ) )
+		|| SQL_SUCCESS != stmt.BindParam( 0, SQLDT_STRING, msg.send_name, strnlen( msg.send_name, NAME_LENGTH ) )
+		|| SQL_SUCCESS != stmt.BindParam( 1, SQLDT_STRING, msg.dest_name, strnlen( msg.dest_name, NAME_LENGTH ) )
+		|| SQL_SUCCESS != stmt.BindParam( 2, SQLDT_STRING, msg.title, strnlen( msg.title, MAIL_TITLE_LENGTH ) )
+		|| SQL_SUCCESS != stmt.BindParam( 3, SQLDT_STRING, msg.body, strnlen( msg.body, MAIL_BODY_LENGTH ) )
+		|| SQL_SUCCESS != stmt.Execute() ){
+		SqlStmt_ShowDebug( stmt );
+		msg.id = 0;
+		return false;
+	}
+
+	msg.id = static_cast<int32>( stmt.LastInsertId() );
+
+	StringBuf_Clear( &buf );
+	StringBuf_Printf( &buf, "INSERT INTO `%s` (`id`, `index`, `amount`, `nameid`, `refine`, `attribute`, `identify`, `unique_id`, `bound`, `enchantgrade`", schema_config.mail_attachment_db );
+	for( j = 0; j < MAX_SLOTS; j++ ){
+		StringBuf_Printf( &buf, ", `card%d`", j );
+	}
+	for( j = 0; j < MAX_ITEM_RDM_OPT; ++j ){
+		StringBuf_Printf( &buf, ", `option_id%d`, `option_val%d`, `option_parm%d`", j, j, j );
+	}
+	StringBuf_AppendStr( &buf, ") VALUES " );
+
+	bool found = false;
+
+	for( int32 i = 0; i < MAIL_MAX_ITEM; i++ ){
+		const item& it = msg.item[i];
+
+		if( it.nameid == 0 ){
+			continue;
+		}
+
+		StringBuf_Printf( &buf, "%s('%d', '%d', '%d', '%u', '%d', '%d', '%d', '%" PRIu64 "', '%d', '%d'", found ? "," : "",
+			msg.id, i, it.amount, it.nameid, it.refine, it.attribute, it.identify, it.unique_id, it.bound, it.enchantgrade );
+		for( j = 0; j < MAX_SLOTS; j++ ){
+			StringBuf_Printf( &buf, ", '%u'", it.card[j] );
+		}
+		for( j = 0; j < MAX_ITEM_RDM_OPT; ++j ){
+			StringBuf_Printf( &buf, ", '%d', '%d', '%d'", it.option[j].id, it.option[j].value, it.option[j].param );
+		}
+		StringBuf_AppendStr( &buf, ")" );
+		found = true;
+	}
+
+	return !found || jobrecord_query( StringBuf_Value( &buf ) );
+}
+
+/// JOBRECORD_DELETE: mails the record's stashed equipment to the character and deletes the record,
+/// all in one transaction. Items the character already owns (duplicates left by an interrupted
+/// save) are not mailed. The mails have sender id 0, so they never expire (§2.4 of the design).
+void mapif_parse_jobrecord_delete( int32 fd ){
+	uint32 char_id = RFIFOL( fd, 2 );
+	uint32 record_id = RFIFOL( fd, 6 );
+	char char_name[NAME_LENGTH];
+	std::vector<s_job_record_base> bases;
+	std::vector<item> items;
+	std::unordered_set<uint64> owned;
+	std::vector<mail_message> mails;
+	uint32 active = 0;
+	bool success = false;
+
+	safestrncpy( char_name, RFIFOCP( fd, 10 ), NAME_LENGTH );
+
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `active_record` FROM `%s` WHERE `char_id` = '%u'", schema_config.job_record_state_table, char_id ) ){
+		Sql_ShowDebug( sql_handle );
+	}else if( SQL_SUCCESS == Sql_NextRow( sql_handle ) ){
+		char* data;
+
+		Sql_GetData( sql_handle, 0, &data, nullptr );
+		active = strtoul( data, nullptr, 10 );
+	}
+	Sql_FreeResult( sql_handle );
+
+	if( record_id == 0 || record_id == active ){
+		ShowError( "mapif_parse_jobrecord_delete: Refusing to delete the active record %u of character %u.\n", record_id, char_id );
+	}else if( jobrecord_bases_fromsql( char_id, record_id, bases ) && !bases.empty()
+		&& jobrecord_items_fromsql( char_id, record_id, items )
+		&& jobrecord_owned_unique_ids( char_id, owned ) ){
+		// Group the remaining items by MAIL_MAX_ITEM
+		for( const item& it : items ){
+			if( it.unique_id != 0 && owned.count( it.unique_id ) > 0 ){
+				ShowWarning( "Job record: character %u already owns item %u (unique id %" PRIu64 "), not mailing the stashed copy.\n", char_id, it.nameid, it.unique_id );
+				continue;
+			}
+
+			if( mails.empty() || mails.back().item[MAIL_MAX_ITEM - 1].nameid != 0 ){
+				mail_message msg = {};
+
+				msg.send_id = 0; // System mail: never returned or deleted
+				safestrncpy( msg.send_name, "Job Record", NAME_LENGTH );
+				msg.dest_id = char_id;
+				safestrncpy( msg.dest_name, char_name, NAME_LENGTH );
+				safesnprintf( msg.title, MAIL_TITLE_LENGTH, "Equipment of %s", bases[0].name );
+				safesnprintf( msg.body, MAIL_BODY_LENGTH, "The job record \"%s\" was deleted. This is the equipment it was wearing.", bases[0].name );
+				msg.status = MAIL_NEW;
+				msg.type = MAIL_INBOX_NORMAL;
+				msg.timestamp = time( nullptr );
+				mails.push_back( msg );
+			}
+
+			item* slot = mails.back().item;
+			int32 i = 0;
+
+			while( slot[i].nameid != 0 ){
+				i++;
+			}
+
+			slot[i] = it;
+			slot[i].id = 0;
+			slot[i].equip = 0;
+			slot[i].equipSwitch = 0;
+		}
+
+		if( jobrecord_transaction_begin() ){
+			success = true;
+
+			for( mail_message& msg : mails ){
+				if( !jobrecord_mail_tosql( msg ) ){
+					success = false;
+					break;
+				}
+			}
+
+			const char* tables[] = {
+				schema_config.job_record_table, schema_config.job_record_skill_table, schema_config.job_record_reg_table,
+				schema_config.job_record_quest_table, schema_config.job_record_hotkey_table, schema_config.job_record_item_table,
+			};
+
+			for( size_t t = 0; success && t < ARRAYLENGTH( tables ); t++ ){
+				success = jobrecord_clear_rows( tables[t], char_id, record_id );
+			}
+
+			if( success ){
+				success = jobrecord_transaction_commit();
+			}else{
+				jobrecord_transaction_rollback();
+			}
+		}
+	}
+
+	if( success ){
+		// Notify the recipient only now that the mails are committed
+		for( mail_message& msg : mails ){
+			mapif_Mail_new( &msg );
+		}
+
+		ShowInfo( "Job record %u of character %u deleted, %u mail(s) sent.\n", record_id, char_id, static_cast<uint32>( mails.size() ) );
+	}
+
+	WFIFOHEAD( fd, 13 );
+	WFIFOW( fd, 0 ) = JOBRECORD_DELETE_ACK;
+	WFIFOL( fd, 2 ) = char_id;
+	WFIFOL( fd, 6 ) = record_id;
+	WFIFOB( fd, 10 ) = success ? 1 : 0;
+	WFIFOW( fd, 11 ) = static_cast<uint16>( success ? mails.size() : 0 );
+	WFIFOSET( fd, 13 );
+}
+
 } // namespace
 
 /**
@@ -860,6 +1083,7 @@ int32 inter_jobrecord_parse_frommap( int32 fd ){
 		case JOBRECORD_UPSERT: mapif_parse_jobrecord_upsert( fd ); break;
 		case JOBRECORD_COMMIT: mapif_parse_jobrecord_commit( fd ); break;
 		case JOBRECORD_RENAME: mapif_parse_jobrecord_rename( fd ); break;
+		case JOBRECORD_DELETE: mapif_parse_jobrecord_delete( fd ); break;
 		default:
 			return 0;
 	}

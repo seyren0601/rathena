@@ -47,7 +47,7 @@ static const int32 packet_len_table[] = {
 	12,-1, 7, 3,  0, 0, 0, 0,  0, 0,-1, 9, -1, 0,  0, 0, //0x3880  Pet System,  Storages
 	-1,-1, 7, 3,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0,  0, 0, //0x3890  Homunculus [albator]
 	-1,-1, 8, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0,  0, 0, //0x38A0  Clans
-	-1,-1,11,11, 11, 0, 0, 0,  0, 0, 0, 0,  0, 0,  0, 0, //0x38B0  [Job Record] (see common/job_record.hpp)
+	-1,-1,11,11, 11,13, 0, 0,  0, 0, 0, 0,  0, 0,  0, 0, //0x38B0  [Job Record] (see common/job_record.hpp)
 };
 
 extern int32 char_fd; // inter server Fd used for char_fd
@@ -3896,6 +3896,7 @@ int32 intif_parse(int32 fd)
 	case JOBRECORD_UPSERT_ACK:	jobrecord_parse_upsert_ack(fd); break;
 	case JOBRECORD_COMMIT_ACK:	jobrecord_parse_commit_ack(fd); break;
 	case JOBRECORD_RENAME_ACK:	jobrecord_parse_rename_ack(fd); break;
+	case JOBRECORD_DELETE_ACK:	jobrecord_parse_delete_ack(fd); break;
 
 	default:
 		ShowError("intif_parse : unknown packet %d %x\n",fd,RFIFOW(fd,0));

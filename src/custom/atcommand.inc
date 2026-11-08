@@ -38,6 +38,7 @@ ACMD_FUNC(jobrecordinfo)
  *   @jobrecord switch <record id>
  *   @jobrecord preview <record id>
  *   @jobrecord rename <record id> <name>
+ *   @jobrecord delete <record id>
  *   @jobrecord vars      (job-quest progress the whitelist keeps per record)
  *   @jobrecord reload    (reloads db/job_record_vars.yml)
  * Access is controlled by conf/groups.yml (GM only by default).
@@ -51,7 +52,7 @@ ACMD_FUNC(jobrecord)
 	nullpo_retr(-1, sd);
 
 	if (!message || (args = sscanf(message, "%15s %23s %23[^\n]", action, arg1, arg2)) < 1) {
-		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name> | vars | reload");
+		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name> | delete <id> | vars | reload");
 		return -1;
 	}
 
@@ -65,7 +66,7 @@ ACMD_FUNC(jobrecord)
 		return 0;
 	}
 	if (args < 2) {
-		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name> | vars | reload");
+		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name> | delete <id> | vars | reload");
 		return -1;
 	}
 
@@ -99,8 +100,12 @@ ACMD_FUNC(jobrecord)
 		error = jobrecord_rename(*sd, static_cast<uint32>(strtoul(arg1, nullptr, 10)), arg2);
 		if (error == nullptr)
 			clif_displaymessage(fd, "Job record: renamed.");
+	} else if (!strcmpi(action, "delete")) {
+		error = jobrecord_delete(*sd, static_cast<uint32>(strtoul(arg1, nullptr, 10)));
+		if (error == nullptr)
+			clif_displaymessage(fd, "Job record: deleting the record...");
 	} else {
-		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name>");
+		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name> | delete <id> | vars | reload");
 		return -1;
 	}
 

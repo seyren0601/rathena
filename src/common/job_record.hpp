@@ -28,6 +28,7 @@ enum e_job_record_packet_frommap : uint16 {
 	JOBRECORD_UPSERT = 0x30B2,     ///< W cmd, W len, L char_id, L record_id, B section, W count, data[] (chunked, ends with JOBRECORD_SECTION_END)
 	JOBRECORD_COMMIT = 0x30B3,     ///< W cmd, L char_id, L active_record, L clear_stash_record (14)
 	JOBRECORD_RENAME = 0x30B4,     ///< W cmd, L char_id, L record_id, NAME_LENGTH name (34)
+	JOBRECORD_DELETE = 0x30B5,     ///< W cmd, L char_id, L record_id, NAME_LENGTH character name (34)
 };
 
 /// Inter-server packet ids (char -> map)
@@ -37,6 +38,7 @@ enum e_job_record_packet_tomap : uint16 {
 	JOBRECORD_UPSERT_ACK = 0x38B2, ///< W cmd, L char_id, L record_id, B success (11)
 	JOBRECORD_COMMIT_ACK = 0x38B3, ///< W cmd, L char_id, L active_record, B success (11)
 	JOBRECORD_RENAME_ACK = 0x38B4, ///< W cmd, L char_id, L record_id, B success (11)
+	JOBRECORD_DELETE_ACK = 0x38B5, ///< W cmd, L char_id, L record_id, B success, W mails sent (13)
 };
 
 /// Header sizes of the chunked packets
