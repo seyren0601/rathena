@@ -48,6 +48,7 @@
 #include "instance.hpp"
 #include "intif.hpp"
 #include "itemdb.hpp"
+#include "jobrecord.hpp" // [Job Record] used by src/custom/script.inc
 #include "log.hpp"
 #include "mail.hpp"
 #include "map.hpp"

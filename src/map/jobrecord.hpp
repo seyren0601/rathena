@@ -134,6 +134,8 @@ void jobrecord_request_list( map_session_data& sd );
 const char* jobrecord_start_switch( map_session_data& sd, uint32 record_id );
 const char* jobrecord_create( map_session_data& sd, const char* name, bool doram );
 const char* jobrecord_rename( map_session_data& sd, uint32 record_id, const char* name );
+const char* jobrecord_can_act( map_session_data& sd );
+uint32 jobrecord_get_cooldown( map_session_data& sd );
 const char* jobrecord_preview( map_session_data& sd, uint32 record_id, s_job_record_preview& out );
 const char* jobrecord_preview_new( map_session_data& sd, bool doram, s_job_record_preview& out );
 

@@ -94,4 +94,5 @@ Footer:
     Mode: Prerenewal
   - Path: db/re/item_db.yml
     Mode: Renewal
+  - Path: db/job_record_item_db.yml # [Job Record]
   - Path: db/import/item_db.yml

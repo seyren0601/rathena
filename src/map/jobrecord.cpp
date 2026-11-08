@@ -1508,6 +1508,17 @@ const char* jobrecord_create( map_session_data& sd, const char* name, bool doram
 	return nullptr;
 }
 
+/// Whether a create, switch or delete is possible right now (for menus, before asking for details)
+/// @return nullptr when possible, otherwise a message for the player
+const char* jobrecord_can_act( map_session_data& sd ){
+	return jobrecord_check_can_act( sd );
+}
+
+/// Seconds left before the next create, switch or delete
+uint32 jobrecord_get_cooldown( map_session_data& sd ){
+	return jobrecord_cooldown_left( sd );
+}
+
 /// Predicts the weight and inventory slots after switching to a saved record, from the record list
 /// @return nullptr on success, otherwise a message for the player
 const char* jobrecord_preview( map_session_data& sd, uint32 record_id, s_job_record_preview& out ){

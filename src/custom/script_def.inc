@@ -9,3 +9,13 @@
  **/
 
 //BUILDIN_DEF(example,""),
+
+// [Job Record]
+BUILDIN_DEF(getjobrecords,""),
+BUILDIN_DEF(jobrecord_canact,""),
+BUILDIN_DEF(jobrecord_cooldown,""),
+BUILDIN_DEF(jobrecord_preview,"i"),
+BUILDIN_DEF2(jobrecord_preview,"jobrecord_preview_new","i"),
+BUILDIN_DEF(jobrecord_switch,"i"),
+BUILDIN_DEF(jobrecord_create,"si"),
+BUILDIN_DEF(jobrecord_rename,"is"),

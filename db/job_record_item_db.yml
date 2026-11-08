@@ -1,0 +1,51 @@
+# This file is a part of rAthena.
+#   Copyright(C) 2026 rAthena Development Team
+#   https://rathena.org - https://github.com/rathena
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+###########################################################################
+# [Job Record] Items of the job record system
+###########################################################################
+#
+# Imported from db/item_db.yml. See doc/yaml/db/item_db.yml for the format.
+#
+# The client needs an entry for item 900000 too (name, description and
+# sprite in its item info file), otherwise it shows as an unknown item.
+#
+###########################################################################
+
+Header:
+  Type: ITEM_DB
+  Version: 3
+
+Body:
+  - Id: 900000
+    AegisName: Job_Record_Book
+    Name: Job Record Book
+    Type: Usable
+    Weight: 0
+    Flags:
+      NoConsume: true
+    Trade:
+      NoDrop: true
+      NoTrade: true
+      NoSell: true
+      NoCart: true
+      NoStorage: true
+      NoGuildStorage: true
+      NoMail: true
+      NoAuction: true
+    Script: |
+      callfunc "F_JobRecord";
