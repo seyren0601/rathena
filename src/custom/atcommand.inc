@@ -38,17 +38,34 @@ ACMD_FUNC(jobrecordinfo)
  *   @jobrecord switch <record id>
  *   @jobrecord preview <record id>
  *   @jobrecord rename <record id> <name>
+ *   @jobrecord vars      (job-quest progress the whitelist keeps per record)
+ *   @jobrecord reload    (reloads db/job_record_vars.yml)
  * Access is controlled by conf/groups.yml (GM only by default).
  **/
 ACMD_FUNC(jobrecord)
 {
 	char action[16] = {}, arg1[NAME_LENGTH] = {}, arg2[NAME_LENGTH] = {};
 	const char* error = nullptr;
+	int32 args;
 
 	nullpo_retr(-1, sd);
 
-	if (!message || sscanf(message, "%15s %23s %23[^\n]", action, arg1, arg2) < 2) {
-		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name>");
+	if (!message || (args = sscanf(message, "%15s %23s %23[^\n]", action, arg1, arg2)) < 1) {
+		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name> | vars | reload");
+		return -1;
+	}
+
+	if (!strcmpi(action, "vars")) {
+		jobrecord_show_vars(*sd, fd);
+		return 0;
+	}
+	if (!strcmpi(action, "reload")) {
+		jobrecord_reload();
+		clif_displaymessage(fd, "Job record: db/job_record_vars.yml reloaded.");
+		return 0;
+	}
+	if (args < 2) {
+		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name> | vars | reload");
 		return -1;
 	}
 

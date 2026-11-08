@@ -39,6 +39,7 @@
 #include "homunculus.hpp"
 #include "instance.hpp"
 #include "intif.hpp"
+#include "jobrecord.hpp" // [Job Record]
 #include "log.hpp"
 #include "mapreg.hpp"
 #include "mercenary.hpp"
@@ -5440,6 +5441,7 @@ bool MapServer::initialize( int32 argc, char *argv[] ){
 	do_init_elemental();
 	do_init_quest();
 	do_init_achievement();
+	do_init_jobrecord(); // [Job Record] needs the quest database
 	do_init_battleground();
 	do_init_npc();
 	do_init_unit();

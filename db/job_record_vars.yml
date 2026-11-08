@@ -1,0 +1,230 @@
+# This file is a part of rAthena.
+#   Copyright(C) 2026 rAthena Development Team
+#   https://rathena.org - https://github.com/rathena
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+###########################################################################
+# [Job Record] Job-quest progress kept per record
+###########################################################################
+#
+# Character variables and quest log entries listed here belong to a job
+# record: they are saved with the record when the player switches away,
+# cleared, and restored when the player switches back. A new record starts
+# without them, so the official job quests can be done again.
+#
+# Everything not listed here stays shared by all records of the character.
+# Engine variables (job change levels, Star Gladiator feel/hate, Taekwon
+# mission) are always handled and don't need to be listed.
+#
+# Curated from the job scripts loaded by npc/scripts_jobs.conf and
+# npc/re/scripts_jobs.conf (job quests, skill quests, Novice Academy).
+# Left out on purpose because other content uses them too:
+#   MISC_QUEST, RESRVPTS, sail, xmas_npc
+#   quests 11769, 11782 (DeepForest instance), 14154-14157 (lasagna),
+#   21001, 21008 (Izlude warps)
+#
+###########################################################################
+# Entries (one key per entry)
+###########################################################################
+# - Variable           Permanent character variable name (all array indexes).
+#                      String variables end with $.
+# - Prefix             Every permanent character variable starting with this text.
+# - Quest              Quest id.
+#   To                 Last quest id of a range starting at Quest. (Optional)
+###########################################################################
+
+Header:
+  Type: JOB_RECORD_VARS_DB
+  Version: 1
+
+Body:
+  # 1st jobs
+  - Variable: job_acolyte_q
+  - Variable: q_job_thief
+  # 2nd jobs
+  - Variable: KNIGHT_Q
+  - Variable: CRUS_Q
+  - Variable: MONK_Q
+  - Variable: PRIEST_Q
+  - Variable: SAGE_Q
+  - Variable: SAGE_Q2
+  - Variable: sage_m2
+  - Variable: sage_m4
+  - Variable: WIZ_Q
+  - Variable: WIZ_Q2
+  - Variable: wizard_m1
+  - Variable: HNTR_Q
+  - Variable: BARD_Q
+  - Variable: DANC_Q
+  - Variable: ASSIN_Q
+  - Variable: ASSIN_Q2
+  - Variable: ASSIN_Q3
+  - Variable: ROGUE_Q
+  - Variable: BSMITH_Q
+  - Variable: ALCH_Q
+  - Variable: bioeth
+  # Expanded jobs
+  - Variable: TK_Q
+  - Variable: TAEK_Q
+  - Variable: STGL_Q
+  - Variable: SOUL_Q
+  - Variable: NINJ_Q
+  - Variable: GUNS_Q
+  - Variable: SUPNOV_Q
+  - Variable: EXSUPNOV_Q
+  - Variable: EXSUPNOV_Q_
+  - Variable: EX_SUPNOV_Q_
+  - Variable: job_kagero
+  - Variable: job_kagero_lp
+  - Variable: job_ko
+  - Variable: job_gun
+  # 3rd jobs
+  - Prefix: job_rune_edq
+  - Variable: job_wl
+  - Variable: job_ranger01
+  - Variable: job_arch
+  - Variable: job_3rd_gc
+  - Variable: job__mechanic
+  - Variable: job_gen
+  - Variable: job_royal
+  - Variable: job_soc
+  - Variable: job_shu
+  - Variable: job_min
+  - Variable: job_wan
+  - Variable: job_sha
+  # Rebirth
+  - Variable: ADVJOB
+  - Variable: valkyrie_Q
+  - Variable: lastJob
+  # Skill quests (quest skills are saved per record)
+  - Variable: KNGT_SK
+  - Variable: CRUS_SK
+  - Variable: MONK_SK
+  - Variable: PRIEST_SK
+  - Variable: SAG_SK
+  - Variable: WIZ_SK
+  - Variable: qskill_hunter
+  - Variable: qskill_bard
+  - Variable: DANCER_SK
+  - Variable: ASSN_SK
+  - Variable: ASSN_SK2
+  - Variable: ROG_SK
+  - Variable: BLACK_SK
+  - Variable: BLACK_SK2
+  - Variable: ALCHE_SK
+  - Variable: skill_thief_1
+  - Variable: skill_nov
+  - Variable: redemp
+  - Variable: cart_remodel
+  # Novice Academy
+  - Prefix: nov_3_
+  - Variable: new_cook
+  # Quest log entries of the job scripts
+  - Quest: 1000 # jobs/valkyrie.txt
+  - Quest: 1229
+    To: 1230 # re/jobs/novice/academy.txt
+  - Quest: 1237
+    To: 1240 # re/jobs/novice/academy.txt
+  - Quest: 2000
+    To: 2041 # jobs/2-1/blacksmith.txt
+  - Quest: 2043
+    To: 2062 # jobs/2-2/sage.txt
+  - Quest: 2187
+    To: 2191 # re/jobs/3-1/archbishop.txt
+  - Quest: 2209
+    To: 2223 # re/jobs/3-2/genetic.txt
+  - Quest: 2293
+    To: 2299 # re/jobs/novice/academy.txt
+  - Quest: 3000
+    To: 3004 # jobs/2-2/bard.txt
+  - Quest: 3006
+    To: 3029 # jobs/2-2/crusader.txt
+  - Quest: 3031
+    To: 3032 # jobs/2-2/monk.txt
+  - Quest: 3200
+    To: 3220 # re/jobs/3-1/rune_knight.txt
+  - Quest: 4000
+    To: 4013 # jobs/2-1/hunter.txt
+  - Quest: 4268
+    To: 4269 # re/jobs/novice/academy.txt
+  - Quest: 5092
+    To: 5100 # re/jobs/novice/supernovice_ex.txt
+  - Quest: 5131
+    To: 5146 # re/jobs/2e/kagerou_oboro.txt
+  - Quest: 5148
+    To: 5159 # re/jobs/novice/academy.txt
+  - Quest: 6000
+    To: 6002 # jobs/1-1e/taekwon.txt
+  - Quest: 6005
+    To: 6008 # jobs/2-2e/SoulLinker.txt
+  - Quest: 6010 # jobs/novice/supernovice.txt
+  - Quest: 6015
+    To: 6018 # jobs/1-1e/ninja.txt
+  - Quest: 6020
+    To: 6024 # jobs/1-1e/gunslinger.txt
+  - Quest: 7000
+    To: 7011 # jobs/2-2/dancer.txt
+  - Quest: 7091
+    To: 7099 # re/jobs/3-1/guillotine_cross.txt
+  - Quest: 7101
+    To: 7124 # re/jobs/3-1/guillotine_cross.txt
+  - Quest: 7126
+    To: 7127 # re/jobs/novice/academy.txt
+  - Quest: 7160
+    To: 7168 # re/jobs/3-2/shadow_chaser.txt
+  - Quest: 7171
+    To: 7179 # re/jobs/3-2/shadow_chaser.txt
+  - Quest: 7471
+    To: 7487 # re/jobs/novice/academy.txt
+  - Quest: 7495 # re/jobs/novice/academy.txt
+  - Quest: 8000
+    To: 8016 # jobs/2-1/assassin.txt
+  - Quest: 8254
+    To: 8262 # re/jobs/3-1/ranger.txt
+  - Quest: 9000
+    To: 9018 # jobs/2-1/knight.txt
+  - Quest: 9264
+    To: 9266 # re/jobs/novice/academy.txt
+  - Quest: 10090
+    To: 10092 # re/jobs/3-1/mechanic.txt
+  - Quest: 10094
+    To: 10101 # re/jobs/3-1/mechanic.txt
+  - Quest: 11106
+    To: 11112 # re/jobs/3-1/warlock.txt
+  - Quest: 11135
+    To: 11158 # re/jobs/3-2/minstrel.txt
+  - Quest: 11338
+    To: 11344 # re/jobs/novice/academy.txt
+  - Quest: 11770
+    To: 11781 # re/jobs/doram/spirit_handler.txt
+  - Quest: 12090
+    To: 12094 # re/jobs/3-2/royal_guard.txt
+  - Quest: 12096
+    To: 12098 # re/jobs/3-2/sorcerer.txt
+  - Quest: 12302
+    To: 12307 # re/jobs/novice/academy.txt
+  - Quest: 12340
+    To: 12345 # re/jobs/2e/rebellion.txt
+  - Quest: 13101
+    To: 13102 # re/jobs/novice/academy.txt
+  - Quest: 14142 # re/jobs/novice/academy.txt
+  - Quest: 14158 # re/jobs/novice/academy.txt
+  - Quest: 15000
+    To: 15001 # re/jobs/novice/academy.txt
+  - Quest: 21002 # re/jobs/novice/academy.txt
+
+Footer:
+  Imports:
+  - Path: db/import/job_record_vars.yml

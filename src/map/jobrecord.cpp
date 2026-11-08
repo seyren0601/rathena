@@ -14,6 +14,7 @@
 #include <cstring>
 #include <ctime>
 
+#include <common/malloc.hpp>
 #include <common/showmsg.hpp>
 #include <common/socket.hpp>
 #include <common/strlib.hpp>
@@ -32,6 +33,7 @@
 #include "map.hpp"
 #include "party.hpp"
 #include "pc.hpp"
+#include "quest.hpp"
 #include "script.hpp"
 #include "skill.hpp"
 #include "status.hpp"
@@ -50,6 +52,119 @@ const uint16 job_record_summary_skills[] = {
 	ALL_INCCARRY,
 };
 const uint8 job_record_summary_skill_count = static_cast<uint8>( ARRAYLENGTH( job_record_summary_skills ) );
+
+/*==========================================
+ * Job-quest progress whitelist (phase 6): db/job_record_vars.yml
+ *------------------------------------------*/
+
+const std::string JobRecordVarDatabase::getDefaultLocation(){
+	return std::string( db_path ) + "/job_record_vars.yml";
+}
+
+void JobRecordVarDatabase::clear(){
+	this->variables.clear();
+	this->prefixes.clear();
+	this->quests.clear();
+}
+
+uint64 JobRecordVarDatabase::parseBodyNode( const ryml::NodeRef& node ){
+	if( this->nodeExists( node, "Variable" ) ){
+		std::string name;
+
+		if( !this->asString( node, "Variable", name ) || name.empty() ){
+			return 0;
+		}
+		if( name[0] == '#' || name[0] == '@' || name[0] == '.' || name[0] == '$' ){
+			this->invalidWarning( node["Variable"], "Only permanent character variables can be kept per record, skipping %s.\n", name.c_str() );
+			return 0;
+		}
+
+		this->variables.insert( name );
+		return 1;
+	}
+
+	if( this->nodeExists( node, "Prefix" ) ){
+		std::string prefix;
+
+		if( !this->asString( node, "Prefix", prefix ) || prefix.empty() ){
+			return 0;
+		}
+
+		this->prefixes.push_back( prefix );
+		return 1;
+	}
+
+	if( this->nodeExists( node, "Quest" ) ){
+		int32 from, to;
+
+		if( !this->asInt32( node, "Quest", from ) ){
+			return 0;
+		}
+
+		to = from;
+
+		if( this->nodeExists( node, "To" ) && !this->asInt32( node, "To", to ) ){
+			return 0;
+		}
+		if( to < from ){
+			this->invalidWarning( node["To"], "To %d is lower than Quest %d, skipping.\n", to, from );
+			return 0;
+		}
+
+		this->quests.push_back( { from, to } );
+		return 1;
+	}
+
+	this->invalidWarning( node, "Entry needs one of Variable, Prefix or Quest, skipping.\n" );
+	return 0;
+}
+
+bool JobRecordVarDatabase::matchesVariable( const char* name ) const{
+	// Variables managed by the engine itself (see DD §4.3): Star Gladiator feel/hate, Taekwon mission
+	static const char* engine_variables[] = {
+		"PC_FEEL_SUN", "PC_FEEL_MOON", "PC_FEEL_STAR",
+		"PC_HATE_MOB_SUN", "PC_HATE_MOB_MOON", "PC_HATE_MOB_STAR",
+		TKMISSIONID_VAR, TKMISSIONCOUNT_VAR,
+	};
+
+	for( const char* engine_variable : engine_variables ){
+		if( strcmp( name, engine_variable ) == 0 ){
+			return true;
+		}
+	}
+
+	if( this->variables.count( name ) > 0 ){
+		return true;
+	}
+
+	for( const std::string& prefix : this->prefixes ){
+		if( strncmp( name, prefix.c_str(), prefix.size() ) == 0 ){
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool JobRecordVarDatabase::matchesQuest( int32 quest_id ) const{
+	for( const auto& range : this->quests ){
+		if( quest_id >= range.first && quest_id <= range.second ){
+			return true;
+		}
+	}
+
+	return false;
+}
+
+JobRecordVarDatabase job_record_var_db;
+
+void do_init_jobrecord(){
+	job_record_var_db.load();
+}
+
+void jobrecord_reload(){
+	job_record_var_db.reload();
+}
 
 namespace {
 
@@ -217,6 +332,184 @@ void jobrecord_collect_skills( const map_session_data& sd, std::vector<s_skill>&
 	}
 }
 
+/// Registry keys (name id + array index) of the player's job-quest variables, see db/job_record_vars.yml
+std::vector<int64> jobrecord_record_var_keys( const map_session_data& sd ){
+	std::vector<int64> keys;
+
+	if( sd.regs.vars == nullptr ){
+		return keys;
+	}
+
+	DBIterator* iter = db_iterator( sd.regs.vars );
+	DBKey key;
+
+	for( DBData* data = iter->first( iter, &key ); iter->exists( iter ); data = iter->next( iter, &key ) ){
+		if( data->type != DB_DATA_PTR ){
+			continue; // Temporary @number variable
+		}
+
+		const char* name = get_str( script_getvarid( key.i64 ) );
+
+		// Permanent character variables only: no account (#, ##) or temporary (@) variables
+		if( name[0] == '#' || name[0] == '@' || !job_record_var_db.matchesVariable( name ) ){
+			continue;
+		}
+
+		keys.push_back( key.i64 );
+	}
+
+	dbi_destroy( iter );
+
+	return keys;
+}
+
+/// Copies the player's job-quest variables (all array indexes, numbers and strings)
+void jobrecord_collect_regs( const map_session_data& sd, std::vector<s_job_record_reg>& out ){
+	for( int64 key : jobrecord_record_var_keys( sd ) ){
+		const char* name = get_str( script_getvarid( key ) );
+		s_job_record_reg reg = {};
+
+		safestrncpy( reg.key, name, sizeof( reg.key ) );
+		reg.index = script_getvaridx( key );
+
+		if( is_string_variable( name ) ){
+			const script_reg_str* p = static_cast<const script_reg_str*>( i64db_get( sd.regs.vars, key ) );
+
+			if( p == nullptr || p->value == nullptr || p->value[0] == '\0' ){
+				continue;
+			}
+
+			reg.is_str = 1;
+			safestrncpy( reg.value_str, p->value, sizeof( reg.value_str ) );
+		}else{
+			const script_reg_num* p = static_cast<const script_reg_num*>( i64db_get( sd.regs.vars, key ) );
+
+			if( p == nullptr || p->value == 0 ){
+				continue;
+			}
+
+			reg.value_num = p->value;
+		}
+
+		out.push_back( reg );
+	}
+}
+
+/// Re-reads the engine caches that are filled from variables at login (pc_reg_received)
+void jobrecord_refresh_var_caches( map_session_data& sd ){
+	for( int32 i = 0; i < MAX_PC_FEELHATE; i++ ){
+		uint16 index = static_cast<uint16>( pc_readglobalreg( &sd, add_str( sg_info[i].feel_var ) ) );
+
+		sd.feel_map[i].index = index;
+		sd.feel_map[i].m = index != 0 ? map_mapindex2mapid( index ) : -1;
+		sd.hate_mob[i] = static_cast<int16>( pc_readglobalreg( &sd, add_str( sg_info[i].hate_var ) ) ) - 1;
+	}
+
+	if( ( sd.class_ & MAPID_FIRSTMASK ) == MAPID_TAEKWON ){
+		sd.mission_mobid = static_cast<int16>( pc_readglobalreg( &sd, add_str( TKMISSIONID_VAR ) ) );
+		sd.mission_count = static_cast<unsigned char>( pc_readglobalreg( &sd, add_str( TKMISSIONCOUNT_VAR ) ) );
+	}else{
+		sd.mission_mobid = 0;
+		sd.mission_count = 0;
+	}
+}
+
+/// Replaces the player's job-quest variables with the record's
+void jobrecord_apply_regs( map_session_data& sd, const std::vector<s_job_record_reg>& regs ){
+	for( int64 key : jobrecord_record_var_keys( sd ) ){
+		if( is_string_variable( get_str( script_getvarid( key ) ) ) ){
+			pc_setregistry_str( &sd, key, "" );
+		}else{
+			pc_setregistry( &sd, key, 0 );
+		}
+	}
+
+	for( const s_job_record_reg& reg : regs ){
+		if( reg.key[0] == '\0' || !job_record_var_db.matchesVariable( reg.key ) ){
+			continue; // Removed from the whitelist since the record was saved: drop it
+		}
+
+		int64 key = reference_uid( add_str( reg.key ), reg.index );
+
+		if( reg.is_str ){
+			pc_setregistry_str( &sd, key, reg.value_str );
+		}else{
+			pc_setregistry( &sd, key, reg.value_num );
+		}
+	}
+
+	jobrecord_refresh_var_caches( sd );
+}
+
+/// Copies the player's job-quest log entries (timers and kill counts included)
+void jobrecord_collect_quests( const map_session_data& sd, std::vector<quest>& out ){
+	for( int32 i = 0; i < sd.num_quests; i++ ){
+		if( job_record_var_db.matchesQuest( sd.quest_log[i].quest_id ) ){
+			out.push_back( sd.quest_log[i] );
+		}
+	}
+}
+
+/// Replaces the player's job-quest log entries with the record's.
+/// The quest log keeps active and inactive quests first and completed ones after (avail_quests).
+void jobrecord_apply_quests( map_session_data& sd, const std::vector<quest>& incoming ){
+	std::vector<quest> open, completed;
+	std::vector<int32> removed;
+
+	for( int32 i = 0; i < sd.num_quests; i++ ){
+		const quest& q = sd.quest_log[i];
+
+		if( job_record_var_db.matchesQuest( q.quest_id ) ){
+			if( q.state != Q_COMPLETE ){
+				removed.push_back( q.quest_id ); // Only open quests are shown in the client's list
+			}
+			continue;
+		}
+
+		( q.state == Q_COMPLETE ? completed : open ).push_back( q );
+	}
+
+	for( const quest& q : incoming ){
+		if( !job_record_var_db.matchesQuest( q.quest_id ) || quest_search( q.quest_id ) == nullptr ){
+			continue; // Removed from the whitelist or from the quest database
+		}
+
+		if( q.state == Q_COMPLETE ){
+			completed.push_back( q );
+		}else{
+			open.push_back( q );
+		}
+	}
+
+	if( sd.quest_log != nullptr ){
+		aFree( sd.quest_log );
+		sd.quest_log = nullptr;
+	}
+
+	sd.num_quests = static_cast<int32>( open.size() + completed.size() );
+	sd.avail_quests = static_cast<int32>( open.size() );
+
+	if( sd.num_quests > 0 ){
+		CREATE( sd.quest_log, struct quest, sd.num_quests );
+		std::copy( open.begin(), open.end(), sd.quest_log );
+		std::copy( completed.begin(), completed.end(), sd.quest_log + open.size() );
+	}
+
+	sd.save_quest = true;
+
+	// Client: remove the old open job quests, show the record's open ones
+	for( int32 quest_id : removed ){
+		clif_quest_delete( &sd, quest_id );
+	}
+	for( int32 i = 0; i < sd.avail_quests; i++ ){
+		if( job_record_var_db.matchesQuest( sd.quest_log[i].quest_id ) ){
+			clif_quest_add( &sd, &sd.quest_log[i] );
+		}
+	}
+
+	pc_show_questinfo( &sd );
+}
+
 /// Takes a full copy of the player's current progress as a record
 s_job_record_full jobrecord_snapshot( const map_session_data& sd, uint32 record_id, const char* name, uint32 created ){
 	s_job_record_full r;
@@ -248,6 +541,8 @@ s_job_record_full jobrecord_snapshot( const map_session_data& sd, uint32 record_
 	b.last_used = jobrecord_now();
 
 	jobrecord_collect_skills( sd, r.skills );
+	jobrecord_collect_regs( sd, r.regs );
+	jobrecord_collect_quests( sd, r.quests );
 
 	for( uint8 slot = 0; slot < MAX_HOTKEYS_DB; slot++ ){
 		if( st.hotkeys[slot].id != 0 ){
@@ -345,6 +640,10 @@ bool jobrecord_apply( map_session_data& sd, const s_job_record_full& r ){
 
 	// 3. Job (returns false when the job does not change, which is fine)
 	pc_jobchange( &sd, b.class_, 0 );
+
+	// 3b. Job-quest progress: after the job change, which may reset Star Gladiator variables
+	jobrecord_apply_regs( sd, r.regs );
+	jobrecord_apply_quests( sd, r.quests );
 
 	// 4. Skills: wipe what pc_jobchange left behind, then restore the record's own
 	jobrecord_clear_skills( sd );
@@ -1289,6 +1588,35 @@ void jobrecord_parse_rename_ack( int32 fd ){
 /*==========================================
  * Debug
  *------------------------------------------*/
+
+/// Prints the character's variables and quests that the whitelist keeps per record (@jobrecord vars)
+void jobrecord_show_vars( map_session_data& sd, int32 fd ){
+	char output[CHAT_SIZE_MAX];
+	std::vector<s_job_record_reg> regs;
+	std::vector<quest> quests;
+
+	jobrecord_collect_regs( sd, regs );
+	jobrecord_collect_quests( sd, quests );
+
+	safesnprintf( output, sizeof( output ), "Job-quest progress kept per record: %u variable(s), %u quest(s). Whitelist: %u variables, %u prefixes, %u quest ranges.",
+		static_cast<uint32>( regs.size() ), static_cast<uint32>( quests.size() ), static_cast<uint32>( job_record_var_db.variables.size() ),
+		static_cast<uint32>( job_record_var_db.prefixes.size() ), static_cast<uint32>( job_record_var_db.quests.size() ) );
+	clif_displaymessage( fd, output );
+
+	for( const s_job_record_reg& reg : regs ){
+		if( reg.is_str ){
+			safesnprintf( output, sizeof( output ), "  %s[%u] = \"%s\"", reg.key, reg.index, reg.value_str );
+		}else{
+			safesnprintf( output, sizeof( output ), "  %s[%u] = %" PRId64, reg.key, reg.index, reg.value_num );
+		}
+		clif_displaymessage( fd, output );
+	}
+
+	for( const quest& q : quests ){
+		safesnprintf( output, sizeof( output ), "  quest %d: %s", q.quest_id, q.state == Q_COMPLETE ? "complete" : ( q.state == Q_ACTIVE ? "active" : "inactive" ) );
+		clif_displaymessage( fd, output );
+	}
+}
 
 /// Prints the record list and the queue state (@jobrecordinfo)
 void jobrecord_show_info( map_session_data& sd, int32 fd ){

@@ -8,9 +8,13 @@
 #define JOBRECORD_HPP
 
 #include <memory>
+#include <string>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <common/cbasetypes.hpp>
+#include <common/database.hpp>
 #include <common/job_record.hpp>
 #include <common/mmo.hpp>
 #include <common/timer.hpp> // t_tick
@@ -87,6 +91,29 @@ struct s_job_record_preview {
 extern const uint16 job_record_summary_skills[];
 extern const uint8 job_record_summary_skill_count;
 
+/// Which character variables and quests are job-quest progress kept per record (db/job_record_vars.yml)
+class JobRecordVarDatabase : public YamlDatabase {
+public:
+	std::unordered_set<std::string> variables;
+	std::vector<std::string> prefixes;
+	std::vector<std::pair<int32, int32>> quests; ///< Inclusive ranges
+
+	JobRecordVarDatabase() : YamlDatabase( "JOB_RECORD_VARS_DB", 1 ){
+	}
+
+	void clear() override;
+	const std::string getDefaultLocation() override;
+	uint64 parseBodyNode( const ryml::NodeRef& node ) override;
+
+	bool matchesVariable( const char* name ) const;
+	bool matchesQuest( int32 quest_id ) const;
+};
+
+extern JobRecordVarDatabase job_record_var_db;
+
+void do_init_jobrecord();
+void jobrecord_reload();
+
 // Lifecycle
 void jobrecord_request_list( map_session_data& sd );
 
@@ -114,7 +141,8 @@ void jobrecord_parse_upsert_ack( int32 fd );
 void jobrecord_parse_commit_ack( int32 fd );
 void jobrecord_parse_rename_ack( int32 fd );
 
-// Debug output for @jobrecordinfo
+// Debug output for @jobrecordinfo and @jobrecord vars
 void jobrecord_show_info( map_session_data& sd, int32 fd );
+void jobrecord_show_vars( map_session_data& sd, int32 fd );
 
 #endif /* JOBRECORD_HPP */
