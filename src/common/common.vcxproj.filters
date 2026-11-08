@@ -47,6 +47,9 @@
     <ClInclude Include="md5calc.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="job_record.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="mmo.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

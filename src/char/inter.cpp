@@ -30,6 +30,7 @@
 #include "int_elemental.hpp"
 #include "int_guild.hpp"
 #include "int_homun.hpp"
+#include "int_jobrecord.hpp" // [Job Record]
 #include "int_mail.hpp"
 #include "int_mercenary.hpp"
 #include "int_party.hpp"
@@ -67,6 +68,7 @@ int32 inter_recv_packet_length[] = {
 	52,14,-1, 6,  0, 0, 0, 0,  0, 0,13,-1,  0, 0,  0, 0,	// 3080-  Pet System, Storage
 	-1,10,-1, 6,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0,  0, 0,	// 3090-  Homunculus packets [albator]
 	 2,-1, 6, 6,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0,  0, 0,	// 30A0-  Clan packets
+	-1,10,-1,14, 10+NAME_LENGTH, 0, 0, 0,  0, 0, 0, 0,  0, 0,  0, 0,	// 30B0-  [Job Record] (see common/job_record.hpp)
 };
 
 #ifndef WHISPER_MESSAGE_SIZE
@@ -1442,6 +1444,7 @@ int32 inter_parse_frommap(int32 fd)
 		  || inter_quest_parse_frommap(fd)
 		  || inter_clan_parse_frommap(fd)
 		  || inter_achievement_parse_frommap(fd)
+		  || inter_jobrecord_parse_frommap(fd) // [Job Record]
 		   )
 			break;
 		else
