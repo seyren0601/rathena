@@ -1,6 +1,7 @@
 # Job Record System: design v2 (after decisions of 2026-11-08)
 
-> Status: **Design proposal, not implemented.** ✅ = verified in source (with `file:line`) · ⚠️ = inferred · ❓ = unknown.
+> Status: **Implemented on branch `job-record-implementation` (phases 1–10, 2026-11-08). Builds, but not yet tested in game.** §1–§9 are the design as decided. Where the code differs, §10.2 says so, and §10 is the reference for what was built. The test plan is [job-record-test-checklist.md](job-record-test-checklist.md).
+> ✅ = verified in source (with `file:line`) · ⚠️ = inferred · ❓ = unknown.
 > Source-level analysis: [character-progression-and-job-records.md](character-progression-and-job-records.md) (the "deep dive"; § numbers below prefixed **DD**). This document replaces the deep dive's §7 (v1 design) and §9 (questions).
 > Line numbers are for this checkout and are quoted with the function name.
 
@@ -410,3 +411,119 @@ So a human with hair 25 who switches to a Doram record **stays at hair 25 on the
 | Char-server crashes partway through the sequence | At worst a duplicate stash row, removed by `unique_id`. The pointer is repaired by the journal at login |
 
 **Not verifiable from source** ❓ Real crash timing: large buffers can be split across several TCP writes. Test plan for implementation: kill the char-server (a) right after "Preparing record…", (b) right after "Now playing…", (c) while it's down, `@kick` the player. After reconnecting, compare the `inventory` and `char_job_record_item` rows by `unique_id`.
+
+---
+
+## 10. Implementation (as built)
+
+> Branch `job-record-implementation`, one commit per phase. This section describes the code. ✅ marks facts read from the branch.
+
+### 10.1 Phases
+
+| Phase | Commit | What it added |
+|---|---|---|
+| 1 | `f01b8b9cd` | SQL schema (7 InnoDB tables), table names in `conf/inter_athena.conf`, column check at char-server start, cleanup on character delete |
+| 2 | `8083a714f` | Char-server handler `int_jobrecord.cpp`: list, load, upsert, commit, rename. Shared packet structs in `src/common/job_record.hpp` |
+| 3 | `92009e97f` | Map-server plumbing: `jobrecord.cpp` session state, list request at login, `chrif_save` hooks, write queue with resend, `@jobrecordinfo` |
+| 4 | `5412ad5c5` | Switch engine: snapshot, apply, create, switch, rename. `@jobrecord new/switch/rename` |
+| 5 | `4773ba300` | Equipment stash and weight/slot preview. `@jobrecord preview` |
+| 6 | `1534ea995` | Job-quest progress per record (`db/job_record_vars.yml` whitelist). `@jobrecord vars/reload` |
+| 7 | `f7987c567` | Guards, cooldown, load timeout and recovery of an interrupted switch. `conf/battle/job_record.conf` |
+| 8 | `80ec99d13` | Script commands, `F_JobRecord` menu, item 900000 given at login |
+| 9 | `c3885c42b` | Delete a record, with its equipment mailed back |
+| 10 | `c856466f1` | Job Master gifts once per character, 4 gifts made storable |
+
+### 10.2 Where the code differs from §1–§9
+
+| Design | As built | Why |
+|---|---|---|
+| §2.1 stash saved by `char_memitemdata_to_sql` with a new `TABLE_JOB_RECORD` | `int_jobrecord.cpp` writes stash rows itself: **insert only**, skipping `unique_id`s already stored. Rows are removed only by `JOBRECORD_COMMIT` or delete | §9.2 needs additions and removals in separate packets. A diff-save would delete rows in the same step |
+| §3.1 five tables | **Seven**: `char_job_record_state` (`active_record`, `pending_to`, `next_record_id`) is the switch journal, and `char_job_record_hotkey` holds the hotkeys. There's no `upper_flag` column: `class` is the full job ID, which already encodes trans/baby. `char_job_record` also has `hair_color`, `clothes_color` (§9.1). `_reg` has an `is_str` column, and `_item` has no `equip_switch` column | |
+| §3.2 fields on `map_session_data` | One member, `std::shared_ptr<s_job_record_session> job_record` (`pc.hpp:820`). It's a `shared_ptr` because the type is incomplete in `pc.hpp`. It's freed with the session, which covers §9.2 step 7 | Keeps `pc.hpp` free of job-record types |
+| §3.3 `JR_SAVE` / `JR_CLAIM` | `JOBRECORD_UPSERT` (0x30B2, chunked by section) and `JOBRECORD_COMMIT` (0x30B3: new active record + which record's stash to clear). Every write has an ACK (0x38B2/0x38B3) and is resent on the next save until acknowledged, or after 30 s in flight. `JOBRECORD_RENAME` (0x30B4) was added | §9.2 |
+| §4.1 `pc_resetskill` after the job change | Skills are cleared and restored directly in `sd.status.skill[]`, then `pc_calc_skilltree`. `status_db.changeSkillTree` runs first, so the skill tree of the target job is current | `pc_resetskill` would hand out points and send packets mid-switch |
+| §4.1 stash leaves via "unequip all" | Equipped items leave the inventory with `pc_delitem(…, type 4)`, and `equip` keeps the slot mask. `equipSwitch` is cleared (§7 last row). They're restored with `pc_additem` then `pc_equipitem(saved pos)`. Items whose `unique_id` is already in the inventory, cart or storage are skipped and logged. Items that can't be added are **mailed** (sender 0) instead of dropped | |
+| §4.1 preview "warn at 50%" | Warns from `natural_heal_weight_rate` (70 in Renewal), decision 13. **Refuses** above 100% weight or with too few free slots (`jobrecord.cpp:952-955`) | |
+| §4.2 Doram picks hair 1–10 | No picker. A record of the **same race** copies the current look. One of the other race gets hair 1, clothes colour 0, and keeps the hair colour if it's 0–8 (`jobrecord_build_new`, `jobrecord.cpp:974-983`). The Dress Changer / stylist can change it afterwards | Keeps the menu short. The client test in §9.1 is still open |
+| §4.2 name "no `|`/`:`" | 1–23 characters, no control characters, unique per character (`jobrecord_check_name`, `jobrecord.cpp:1241`). The menu replaces `:` with a space only when it displays the name | `:` is only a problem inside `select()` |
+| §4.2 first record | The first time a record is created, the current build is saved as record **"Default"** | |
+| §4.3 mail title "Record <name> deleted" | Sender "Job Record", title **"Equipment of <name>"**, 5 items per mail, `send_id = 0`. The rows are written by `jobrecord_mail_tosql` in `int_jobrecord.cpp` inside the delete transaction | `mail_savemessage` opens its own transaction, and in MySQL `START TRANSACTION` commits the one already open |
+| §4.3 de-duplicate against inventory, cart, storage | Also checks **every** storage in `conf/inter_server.yml` of the account (`jobrecord_owned_unique_ids`). Deleting a record with a pending save is refused | |
+| §4.4 `db/import/job_record_vars.yml`, `QuestRange` | `db/job_record_vars.yml` (+ `db/import-tmpl/` copy, loaded from `db/import/`). Entries are `Variable:`, `Prefix:`, or `Quest:` with optional `To:`. Curated: 72 variables, 2 prefixes (`job_rune_edq`, `nov_3_`), 49 quest ranges = 437 quest IDs. Always included in code: `PC_FEEL_*`, `PC_HATE_MOB_*`, `TK_MISSION_ID`, `TK_MISSION_COUNT`. The change levels are fields of the record, not variables | |
+| §4.5 global `F_JobGearOnce`, variable `JG_<id>`, `db/import/item_db.yml` | Local function `Give_Job_Equip_Once` in `npc/custom/jobmaster.txt`, variable **`JM_GEAR_<id>`**. The `NoStorage: false` overrides live in `db/job_record_item_db.yml` (tracked in git, unlike `db/import/`) | Only the Job Master uses it (decision 12) |
+| §5 paginate 20 per page | 10 per page (`L_Pick`). The list ACK is chunked (`is_last` flag), so any count fits | Client menu height |
+| §2.3 / decision 11 map blocks | `gvg`, `gvg_castle`, `gvg_dungeon`, `gvg_te`, `gvg_te_castle`, `battleground`, and any instance map | |
+| §7 picklog with a new `LOG_TYPE_*` | Item moves use `LOG_TYPE_OTHER`. Skips, mails and recoveries are written to the map-server console (`ShowWarning`) | No change to the log enum |
+| §7 `@reloadjobrecord` | `@jobrecord reload` | |
+| §8 `max_job_records`, state check on every builtin | `job_record_max`, `job_record_cooldown`, `job_record_combat_delay` in `conf/battle/job_record.conf`. Rename only needs the char-server and loaded records: no cooldown, no combat/map check | Decision 16 covers create/switch/delete |
+| §2.4 cosmetic: no expiry countdown for `send_id = 0` | **Not done**. The client may still show a countdown on deletion mails; they're never deleted | Core change, left for later |
+| §9.1 `CostDoram` typo | **Not fixed** | Upstream data |
+
+### 10.3 Files
+
+| Area | Files |
+|---|---|
+| SQL | `sql-files/main.sql`, `sql-files/upgrades/upgrade_20261108.sql` |
+| Char-server | new `src/char/int_jobrecord.{cpp,hpp}`; `inter.cpp` (packet lengths at `:71`, dispatch at `:1447`); `char.hpp`/`char.cpp` (table names, column check, character delete) |
+| Shared | new `src/common/job_record.hpp` (packet IDs, structs, sizes) |
+| Map-server | new `src/map/jobrecord.{cpp,hpp}`; hooks in `pc.hpp:820`, `pc.cpp:2484` (`pc_reg_received`), `chrif.cpp:302/348` (`chrif_save`), `intif.cpp:50/3894` (lengths, dispatch), `map.cpp:5444` (init); includes in `script.cpp`, `atcommand.cpp` |
+| Custom includes | `src/custom/script.inc`, `script_def.inc`, `atcommand.inc`, `atcommand_def.inc`, `battle_config_struct.inc`, `battle_config_init.inc` |
+| Build | `*.vcxproj` / `.filters` for char-server, common, map-server, map-server-generator. CMake and the Makefiles glob `*.cpp`, so Linux builds pick the new files up |
+| Config | `conf/battle/job_record.conf` (imported from `conf/battle_athena.conf`), `conf/inter_athena.conf` (7 table names) |
+| Data | `db/job_record_vars.yml`, `db/import-tmpl/job_record_vars.yml`, `db/job_record_item_db.yml` (imported by `db/item_db.yml`) |
+| Scripts | `npc/custom/job_record.txt` (added to `npc/scripts_custom.conf`), `npc/custom/jobmaster.txt` |
+
+### 10.4 Packets
+
+| ID | Direction | Name | Content |
+|---|---|---|---|
+| 0x30B0 | map→char | `LIST_REQ` | char_id, skill IDs whose levels go into the summary (weight preview) |
+| 0x30B1 | map→char | `LOAD_REQ` | char_id, record_id |
+| 0x30B2 | map→char | `UPSERT` | One record in sections BASE, SKILL, REG, QUEST, HOTKEY, ITEM, then END (`next_record_id`, `pending_to`, `set_pending`). Chunks ≤ 60,000 bytes; the char-server applies it in one transaction on END |
+| 0x30B3 | map→char | `COMMIT` | char_id, new active record, record whose stash to clear; also clears `pending_to` |
+| 0x30B4 | map→char | `RENAME` | char_id, record_id, name |
+| 0x30B5 | map→char | `DELETE` | char_id, record_id, character name (mail recipient) |
+| 0x38B0 | char→map | `LIST_ACK` | active, pending_to, next_record_id, summaries (chunked, `is_last`) |
+| 0x38B1 | char→map | `LOAD_ACK` | Same sections as `UPSERT`, plus a result code |
+| 0x38B2–0x38B5 | char→map | `*_ACK` | success flag; `DELETE_ACK` also carries the number of mails sent |
+
+### 10.5 Settings, commands and messages
+
+**`conf/battle/job_record.conf`**
+
+| Key | Default | Meaning |
+|---|---|---|
+| `job_record_max` | 20 | Records per character, the active one included. 0 = unlimited |
+| `job_record_cooldown` | 30000 | ms after a create, switch or delete finishes. Stored in the character variable `JR_COOLDOWN` (Unix seconds), so it survives a relog |
+| `job_record_combat_delay` | 10000 | ms after the last attack, skill or hit (`canlog_tick`) during which the player counts as in combat |
+
+**Script commands** (`src/custom/script.inc`). On failure they return 0 or −1 and set `@jobrecord_error$`.
+
+| Command | Returns |
+|---|---|
+| `getjobrecords()` | Record count, or −1 while loading. Fills `@jobrecord_id[]`, `@jobrecord_name$[]`, `@jobrecord_class[]`, `@jobrecord_baselv[]`, `@jobrecord_joblv[]`, `@jobrecord_count`, `@jobrecord_active` |
+| `jobrecord_canact()` | 1 if create/switch/delete is allowed now (guards + cooldown) |
+| `jobrecord_cooldown()` | Seconds left on the cooldown |
+| `jobrecord_preview(<id>)` / `jobrecord_preview_new(<doram>)` | Predicted weight %, or −1. Also sets `@jobrecord_weight_rate`, `@jobrecord_warn_rate`, `@jobrecord_needed_slots`, `@jobrecord_free_slots` |
+| `jobrecord_switch(<id>)` | 1 if the switch started (it finishes when the record arrives) |
+| `jobrecord_create("<name>", <doram>)` | 1 on success |
+| `jobrecord_rename(<id>, "<name>")` | 1 if the rename was sent |
+| `jobrecord_delete(<id>)` | 1 if the delete was sent; the result arrives in chat |
+
+**GM commands** (access through `conf/groups.yml`): `@jobrecordinfo` (state, records, write queue), `@jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name> | delete <id> | vars | reload`.
+
+### 10.6 Installing
+
+1. Run `sql-files/upgrades/upgrade_20261108.sql` on the main (char) database. With `char_check_db` on, the char-server refuses to start if the tables or columns are missing (`char_checkdb`, `char.cpp:3328`).
+2. Rebuild **char-server and map-server**. The login server is unchanged.
+3. Add item **900000** (`Job_Record_Book`) to the client's item info file with a name, description and sprite, otherwise it shows as an unknown item.
+4. Optional: change `conf/battle/job_record.conf`, or extend the whitelist in `db/import/job_record_vars.yml` (then `@jobrecord reload`).
+5. Every character receives the bound book at its next login (`OnPCLoginEvent` in `npc/custom/job_record.txt`).
+
+### 10.7 Known limits
+
+- **Untested.** Only the builds and the YAML files were checked; no MySQL server was available. Use [job-record-test-checklist.md](job-record-test-checklist.md) before merging.
+- Job Master gifts are guarded **per item ID**. Gifts shared by two jobs (Book 1550 for Sage and Star Gladiator, Survivor's Rod 1617 for Wizard and Soul Linker, Main Gauche 1208 for Super Novice and Thief) are given only to the first of those jobs a character reaches.
+- Account storage is shared, so stored gifts can be used by the account's other characters.
+- The equip-switch set is cleared for stashed items.
+- `@jobrecord` was a test command before the menu existed. It's kept as a GM tool.

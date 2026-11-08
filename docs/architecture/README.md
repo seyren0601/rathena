@@ -62,7 +62,8 @@ The phase 2 core documents, best read in this order: [startup-and-initialization
 | [glossary.md](glossary.md) | ✅ Phase 6 |
 | [fork-notes.md](fork-notes.md) | ✅ Phase 6 |
 | [../subsystems/map/character-progression-and-job-records.md](../subsystems/map/character-progression-and-job-records.md) | ✅ Deep dive (see [../DOCUMENTATION_PROGRESS.md](../DOCUMENTATION_PROGRESS.md)) |
-| [../subsystems/map/job-record-system-design.md](../subsystems/map/job-record-system-design.md) | 📝 Design proposal |
+| [../subsystems/map/job-record-system-design.md](../subsystems/map/job-record-system-design.md) | 🔨 Design + as built (branch `job-record-implementation`, untested) |
+| [../subsystems/map/job-record-test-checklist.md](../subsystems/map/job-record-test-checklist.md) | 📋 Test checklist (not run yet) |
 
 ## Key facts at a glance
 

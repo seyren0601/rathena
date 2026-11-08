@@ -113,3 +113,13 @@ These come from upstream defaults but matter for this deployment:
 | Web `*_load` routes skip the token check | `src/web/*_controller.cpp` | [web-server.md §7](web-server.md#7-security-and-robustness-notes) |
 | Web server has no TLS | `src/web/web.cpp` | [web-server.md](web-server.md) |
 | Pincode disabled (fork) | `conf/char_athena.conf` | — |
+
+## 9. Job Record System (branch `job-record-implementation`, not merged yet)
+
+A feature branch on top of `my-server`: one character can keep several builds ("records") and switch between them with a bound item. Design and as-built reference: [../subsystems/map/job-record-system-design.md](../subsystems/map/job-record-system-design.md) §10. Test plan: [../subsystems/map/job-record-test-checklist.md](../subsystems/map/job-record-test-checklist.md). **Untested in game.**
+
+- **Needs:** the upgrade SQL `sql-files/upgrades/upgrade_20261108.sql`, a rebuild of char-server and map-server, and a client item info entry for item 900000.
+- **New files:** `src/char/int_jobrecord.*`, `src/map/jobrecord.*`, `src/common/job_record.hpp`, `conf/battle/job_record.conf`, `db/job_record_vars.yml`, `db/job_record_item_db.yml`, `npc/custom/job_record.txt`.
+- **Hooks in upstream files** (each marked `// [Job Record]`): `pc.hpp`, `pc.cpp` (`pc_reg_received`), `chrif.cpp` (`chrif_save`, two calls), `intif.cpp` (packet length row 0x38B0 and dispatch), `inter.cpp` (length row 0x30B0 and dispatch), `char.cpp`/`char.hpp` (table names, column check, character delete), `map.cpp`, `script.cpp`, `atcommand.cpp`, `sql-files/main.sql`, `conf/inter_athena.conf`, `conf/battle_athena.conf`, `db/item_db.yml`, the `.vcxproj` files.
+- **Merge hazards:** upstream may claim inter-server packets 0x30B0–0x30B5 or 0x38B0–0x38B5 (check `doc/packet_interserv.txt` and the length tables after each merge). `chrif_save` changes upstream would need the two hooks placed again in the same order (before the inventory save, after the status save). `npc/custom/jobmaster.txt` now gives its gifts through `Give_Job_Equip_Once`, so upstream Job Master updates conflict in `Get_Job_Equip`.
+- **Behaviour:** Job Master gifts are given once per character (`JM_GEAR_<id>`), and Green Apple Ring 2795, Makeover Brush 6121, Paint Brush 6122 and Hourglass Necklace 490087 become storable.
