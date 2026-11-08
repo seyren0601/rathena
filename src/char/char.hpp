@@ -104,6 +104,14 @@ struct Schema_Config {
 	char clan_table[DB_NAME_LEN];
 	char clan_alliance_table[DB_NAME_LEN];
 	char achievement_table[DB_NAME_LEN];
+	// [Job Record] custom tables, see docs/subsystems/map/job-record-system-design.md
+	char job_record_table[DB_NAME_LEN];
+	char job_record_state_table[DB_NAME_LEN];
+	char job_record_skill_table[DB_NAME_LEN];
+	char job_record_reg_table[DB_NAME_LEN];
+	char job_record_quest_table[DB_NAME_LEN];
+	char job_record_hotkey_table[DB_NAME_LEN];
+	char job_record_item_table[DB_NAME_LEN];
 };
 extern struct Schema_Config schema_config;
 

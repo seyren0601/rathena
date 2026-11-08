@@ -1722,6 +1722,21 @@ enum e_char_del_response char_delete(struct char_session_data* sd, uint32 char_i
 	if (SQL_ERROR == Sql_Query(sql_handle, "DELETE FROM `%s` WHERE `char_id` = '%d'", schema_config.achievement_table, char_id))
 		Sql_ShowDebug(sql_handle);
 
+	/* [Job Record] Data (stashed equipment is deleted together with the character, like the inventory) */
+	{
+		const char* job_record_tables[] = {
+			schema_config.job_record_table, schema_config.job_record_state_table, schema_config.job_record_skill_table,
+			schema_config.job_record_reg_table, schema_config.job_record_quest_table, schema_config.job_record_hotkey_table,
+			schema_config.job_record_item_table
+		};
+
+		for( const char* table : job_record_tables ){
+			if( SQL_ERROR == Sql_Query( sql_handle, "DELETE FROM `%s` WHERE `char_id` = '%d'", table, char_id ) ){
+				Sql_ShowDebug( sql_handle );
+			}
+		}
+	}
+
 	if (charserv_config.log_char) {
 		if( SQL_ERROR == Sql_Query(sql_handle, "INSERT INTO `%s`(`time`, `account_id`,`char_num`,`char_msg`,`name`) VALUES (NOW(), '%d', '%d', 'Deleted char (CID %d)', '%s')",
 			schema_config.charlog_db, account_id, 0, char_id, esc_name) )
@@ -2304,7 +2319,11 @@ bool char_checkdb(void){
                 schema_config.homunculus_db, schema_config.skill_homunculus_db, schema_config.skillcooldown_homunculus_db,
                 schema_config.mercenary_db, schema_config.mercenary_owner_db, schema_config.skillcooldown_mercenary_db,
 		schema_config.elemental_db, schema_config.skillcooldown_db, schema_config.bonus_script_db,
-		schema_config.clan_table, schema_config.clan_alliance_table, schema_config.mail_attachment_db, schema_config.achievement_table
+		schema_config.clan_table, schema_config.clan_alliance_table, schema_config.mail_attachment_db, schema_config.achievement_table,
+		// [Job Record]
+		schema_config.job_record_table, schema_config.job_record_state_table, schema_config.job_record_skill_table,
+		schema_config.job_record_reg_table, schema_config.job_record_quest_table, schema_config.job_record_hotkey_table,
+		schema_config.job_record_item_table
 	};
 	ShowInfo("Start checking DB integrity\n");
 	for (i=0; i<ARRAYLENGTH(sqltable); i++){ //check if they all exist and we can access them in sql-server
@@ -2559,6 +2578,41 @@ bool char_checkdb(void){
 		Sql_ShowDebug(sql_handle);
 		return false;
 	}
+	// [Job Record] checking the columns the job record handler relies on
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `char_id`,`record_id`,`name`,`class`,`base_level`,`base_exp`,`job_level`,`job_exp`,"
+		"`status_point`,`skill_point`,`trait_point`,`str`,`agi`,`vit`,`int`,`dex`,`luk`,`pow`,`sta`,`wis`,`spl`,`con`,`crt`,"
+		"`chg_2nd`,`chg_3rd`,`chg_4th`,`hair`,`hair_color`,`clothes_color`,`equip_weight`,`equip_count`,`created`,`last_used`"
+		" FROM `%s` LIMIT 1;", schema_config.job_record_table ) ){
+		Sql_ShowDebug( sql_handle );
+		return false;
+	}
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `char_id`,`active_record`,`pending_to`,`next_record_id` FROM `%s` LIMIT 1;", schema_config.job_record_state_table ) ){
+		Sql_ShowDebug( sql_handle );
+		return false;
+	}
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `char_id`,`record_id`,`id`,`lv`,`flag` FROM `%s` LIMIT 1;", schema_config.job_record_skill_table ) ){
+		Sql_ShowDebug( sql_handle );
+		return false;
+	}
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `char_id`,`record_id`,`key`,`index`,`is_str`,`value_num`,`value_str` FROM `%s` LIMIT 1;", schema_config.job_record_reg_table ) ){
+		Sql_ShowDebug( sql_handle );
+		return false;
+	}
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `char_id`,`record_id`,`quest_id`,`state`,`time`,`count1`,`count2`,`count3` FROM `%s` LIMIT 1;", schema_config.job_record_quest_table ) ){
+		Sql_ShowDebug( sql_handle );
+		return false;
+	}
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `char_id`,`record_id`,`hotkey`,`type`,`itemskill_id`,`skill_lvl` FROM `%s` LIMIT 1;", schema_config.job_record_hotkey_table ) ){
+		Sql_ShowDebug( sql_handle );
+		return false;
+	}
+	if( SQL_ERROR == Sql_Query( sql_handle, "SELECT `id`,`char_id`,`record_id`,`nameid`,`amount`,`equip`,`identify`,`refine`,`attribute`,"
+		"`card0`,`card1`,`card2`,`card3`,`option_id0`,`option_val0`,`option_parm0`,`option_id1`,`option_val1`,`option_parm1`,"
+		"`option_id2`,`option_val2`,`option_parm2`,`option_id3`,`option_val3`,`option_parm3`,`option_id4`,`option_val4`,`option_parm4`,"
+		"`expire_time`,`favorite`,`bound`,`unique_id`,`enchantgrade` FROM `%s` LIMIT 1;", schema_config.job_record_item_table ) ){
+		Sql_ShowDebug( sql_handle );
+		return false;
+	}
 	Sql_FreeResult(sql_handle);
 	ShowInfo("DB integrity check finished with success\n");
 	return true;
@@ -2660,6 +2714,21 @@ void char_sql_config_read(const char* cfgName) {
 			safestrncpy(schema_config.clan_alliance_table, w2, sizeof(schema_config.clan_alliance_table));
 		else if(!strcmpi(w1,"achievement_table"))
 			safestrncpy(schema_config.achievement_table, w2, sizeof(schema_config.achievement_table));
+		// [Job Record]
+		else if(!strcmpi(w1,"char_job_record_table"))
+			safestrncpy(schema_config.job_record_table, w2, sizeof(schema_config.job_record_table));
+		else if(!strcmpi(w1,"char_job_record_state_table"))
+			safestrncpy(schema_config.job_record_state_table, w2, sizeof(schema_config.job_record_state_table));
+		else if(!strcmpi(w1,"char_job_record_skill_table"))
+			safestrncpy(schema_config.job_record_skill_table, w2, sizeof(schema_config.job_record_skill_table));
+		else if(!strcmpi(w1,"char_job_record_reg_table"))
+			safestrncpy(schema_config.job_record_reg_table, w2, sizeof(schema_config.job_record_reg_table));
+		else if(!strcmpi(w1,"char_job_record_quest_table"))
+			safestrncpy(schema_config.job_record_quest_table, w2, sizeof(schema_config.job_record_quest_table));
+		else if(!strcmpi(w1,"char_job_record_hotkey_table"))
+			safestrncpy(schema_config.job_record_hotkey_table, w2, sizeof(schema_config.job_record_hotkey_table));
+		else if(!strcmpi(w1,"char_job_record_item_table"))
+			safestrncpy(schema_config.job_record_item_table, w2, sizeof(schema_config.job_record_item_table));
 		else if(!strcmpi(w1, "start_status_points"))
 			charserv_config.start_status_points = atoi(w2);
 		//support the import command, just like any other config
@@ -2714,6 +2783,14 @@ void char_set_default_sql(){
 	safestrncpy(schema_config.clan_table,"clan",sizeof(schema_config.clan_table));
 	safestrncpy(schema_config.clan_table,"clan_alliance",sizeof(schema_config.clan_alliance_table));
 	safestrncpy(schema_config.achievement_table,"achievement",sizeof(schema_config.achievement_table));
+	// [Job Record]
+	safestrncpy(schema_config.job_record_table,"char_job_record",sizeof(schema_config.job_record_table));
+	safestrncpy(schema_config.job_record_state_table,"char_job_record_state",sizeof(schema_config.job_record_state_table));
+	safestrncpy(schema_config.job_record_skill_table,"char_job_record_skill",sizeof(schema_config.job_record_skill_table));
+	safestrncpy(schema_config.job_record_reg_table,"char_job_record_reg",sizeof(schema_config.job_record_reg_table));
+	safestrncpy(schema_config.job_record_quest_table,"char_job_record_quest",sizeof(schema_config.job_record_quest_table));
+	safestrncpy(schema_config.job_record_hotkey_table,"char_job_record_hotkey",sizeof(schema_config.job_record_hotkey_table));
+	safestrncpy(schema_config.job_record_item_table,"char_job_record_item",sizeof(schema_config.job_record_item_table));
 }
 
 //set default config
