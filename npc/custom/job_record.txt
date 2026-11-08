@@ -86,7 +86,7 @@ L_Pick:
 	}
 
 	if (.@total == 0) {
-		next;
+		clear;
 		mes .@npc$;
 		mes "There is no record to choose.";
 		return -1;
@@ -130,7 +130,7 @@ L_WeightWarning:
 
 L_Switch:
 	.@npc$ = "[Job Record Book]"; // callsub has its own .@ scope
-	next;
+	clear;
 	mes .@npc$;
 	if (!jobrecord_canact()) {
 		mes @jobrecord_error$;
@@ -145,7 +145,7 @@ L_Switch:
 	.@id = @jobrecord_id[.@r];
 	.@rate = jobrecord_preview(.@id);
 
-	next;
+	clear;
 	mes .@npc$;
 	if (.@rate < 0) {
 		mes @jobrecord_error$;
@@ -160,7 +160,7 @@ L_Switch:
 		return;
 
 	if (!jobrecord_switch(.@id)) {
-		next;
+		clear;
 		mes .@npc$;
 		mes @jobrecord_error$;
 		return;
@@ -171,7 +171,7 @@ L_Switch:
 
 L_Create:
 	.@npc$ = "[Job Record Book]"; // callsub has its own .@ scope
-	next;
+	clear;
 	mes .@npc$;
 	if (!jobrecord_canact()) {
 		mes @jobrecord_error$;
@@ -186,7 +186,7 @@ L_Create:
 		return;
 	.@doram = (.@race == 2);
 
-	next;
+	clear;
 	mes .@npc$;
 	mes "Enter a name for the new record (1 to 23 characters).";
 	mes "For example: Spear Knight.";
@@ -194,7 +194,7 @@ L_Create:
 
 	.@rate = jobrecord_preview_new(.@doram);
 
-	next;
+	clear;
 	mes .@npc$;
 	mes "Create ^0055FF" + .@name$ + "^000000 as a " + (.@doram ? "Summoner" : "Novice") + " at base level 1?";
 	if (@jobrecord_active == 0)
@@ -205,7 +205,7 @@ L_Create:
 	if (select("Create:Cancel") == 2)
 		return;
 
-	next;
+	clear;
 	mes .@npc$;
 	if (!jobrecord_create(.@name$, .@doram)) {
 		mes @jobrecord_error$;
@@ -216,7 +216,7 @@ L_Create:
 
 L_Rename:
 	.@npc$ = "[Job Record Book]"; // callsub has its own .@ scope
-	next;
+	clear;
 	mes .@npc$;
 	if (getjobrecords() <= 0) {
 		mes "You have no record yet. Create a record first.";
@@ -228,12 +228,12 @@ L_Rename:
 	if (.@r < 0)
 		return;
 
-	next;
+	clear;
 	mes .@npc$;
 	mes "New name for ^0055FF" + @jobrecord_name$[.@r] + "^000000 (1 to 23 characters):";
 	input .@name$;
 
-	next;
+	clear;
 	mes .@npc$;
 	if (!jobrecord_rename(@jobrecord_id[.@r], .@name$)) {
 		mes @jobrecord_error$;
@@ -244,7 +244,7 @@ L_Rename:
 
 L_Delete:
 	.@npc$ = "[Job Record Book]"; // callsub has its own .@ scope
-	next;
+	clear;
 	mes .@npc$;
 	if (!jobrecord_canact()) {
 		mes @jobrecord_error$;
@@ -257,7 +257,7 @@ L_Delete:
 	if (.@r < 0)
 		return;
 
-	next;
+	clear;
 	mes .@npc$;
 	mes "Delete ^FF0000" + @jobrecord_name$[.@r] + "^000000?";
 	mes "(" + jobname(@jobrecord_class[.@r]) + ", Base " + @jobrecord_baselv[.@r] + " / Job " + @jobrecord_joblv[.@r] + ")";
@@ -266,7 +266,7 @@ L_Delete:
 	if (select("Delete this record:Cancel") == 2)
 		return;
 
-	next;
+	clear;
 	mes .@npc$;
 	mes "^FF0000This cannot be undone.^000000";
 	mes "Are you really sure you want to delete ^FF0000" + @jobrecord_name$[.@r] + "^000000?";
@@ -274,7 +274,7 @@ L_Delete:
 		return;
 
 	if (!jobrecord_delete(@jobrecord_id[.@r])) {
-		next;
+		clear;
 		mes .@npc$;
 		mes @jobrecord_error$;
 		return;
