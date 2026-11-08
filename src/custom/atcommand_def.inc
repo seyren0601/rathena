@@ -10,3 +10,4 @@
 
 //ACMD_DEF(newcommand),
 ACMD_DEF(jobrecordinfo), // [Job Record]
+ACMD_DEF(jobrecord), // [Job Record] test command until phase 8

@@ -80,6 +80,11 @@ extern const uint8 job_record_summary_skill_count;
 // Lifecycle
 void jobrecord_request_list( map_session_data& sd );
 
+// Actions (return nullptr on success, otherwise a message for the player)
+const char* jobrecord_start_switch( map_session_data& sd, uint32 record_id );
+const char* jobrecord_create( map_session_data& sd, const char* name, bool doram );
+const char* jobrecord_rename( map_session_data& sd, uint32 record_id, const char* name );
+
 // Hooks in chrif_save (called only while the char-server is connected)
 void jobrecord_save_before_inventory( map_session_data& sd );
 void jobrecord_save_after_status( map_session_data& sd );
