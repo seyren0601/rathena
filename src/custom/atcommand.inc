@@ -36,6 +36,7 @@ ACMD_FUNC(jobrecordinfo)
  * Usage:
  *   @jobrecord new <human|doram> <name>
  *   @jobrecord switch <record id>
+ *   @jobrecord preview <record id>
  *   @jobrecord rename <record id> <name>
  * Access is controlled by conf/groups.yml (GM only by default).
  **/
@@ -47,7 +48,7 @@ ACMD_FUNC(jobrecord)
 	nullpo_retr(-1, sd);
 
 	if (!message || sscanf(message, "%15s %23s %23[^\n]", action, arg1, arg2) < 2) {
-		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | rename <id> <name>");
+		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name>");
 		return -1;
 	}
 
@@ -63,6 +64,16 @@ ACMD_FUNC(jobrecord)
 		error = jobrecord_start_switch(*sd, static_cast<uint32>(strtoul(arg1, nullptr, 10)));
 		if (error == nullptr)
 			clif_displaymessage(fd, "Job record: loading the record...");
+	} else if (!strcmpi(action, "preview")) {
+		s_job_record_preview preview;
+		char output[CHAT_SIZE_MAX];
+
+		error = jobrecord_preview(*sd, static_cast<uint32>(strtoul(arg1, nullptr, 10)), preview);
+		if (error == nullptr) {
+			safesnprintf(output, sizeof(output), "Job record preview: weight %u / %u (%u%%, warning from %u%%), equipment needs %u slot(s), %u free.",
+				preview.weight / 10, preview.max_weight / 10, preview.rate, preview.warn_rate, preview.needed_slots, preview.free_slots);
+			clif_displaymessage(fd, output);
+		}
 	} else if (!strcmpi(action, "rename")) {
 		if (arg2[0] == '\0') {
 			clif_displaymessage(fd, "Usage: @jobrecord rename <id> <name>");
@@ -72,7 +83,7 @@ ACMD_FUNC(jobrecord)
 		if (error == nullptr)
 			clif_displaymessage(fd, "Job record: renamed.");
 	} else {
-		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | rename <id> <name>");
+		clif_displaymessage(fd, "Usage: @jobrecord new <human|doram> <name> | switch <id> | preview <id> | rename <id> <name>");
 		return -1;
 	}
 

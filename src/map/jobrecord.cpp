@@ -27,6 +27,8 @@
 #include "guild.hpp"
 #include "homunculus.hpp"
 #include "intif.hpp"
+#include "itemdb.hpp"
+#include "log.hpp"
 #include "map.hpp"
 #include "party.hpp"
 #include "pc.hpp"
@@ -416,6 +418,197 @@ bool jobrecord_apply( map_session_data& sd, const s_job_record_full& r ){
 	return true;
 }
 
+/*==========================================
+ * Equipment stash (phase 5)
+ *------------------------------------------*/
+
+/// Inventory indexes of the equipped items, each once (a two-handed weapon fills two slots)
+std::vector<int16> jobrecord_equipped_indexes( const map_session_data& sd ){
+	std::vector<int16> out;
+
+	for( int32 i = 0; i < EQI_MAX; i++ ){
+		int16 idx = sd.equip_index[i];
+
+		if( idx >= 0 && sd.inventory.u.items_inventory[idx].nameid != 0 && std::find( out.begin(), out.end(), idx ) == out.end() ){
+			out.push_back( idx );
+		}
+	}
+
+	return out;
+}
+
+uint32 jobrecord_item_weight( const item& it ){
+	std::shared_ptr<item_data> id = item_db.find( it.nameid );
+
+	return id != nullptr ? id->weight * std::max<int16>( it.amount, 0 ) : 0;
+}
+
+/// Total weight and inventory slots of the equipped items
+void jobrecord_equipped_totals( const map_session_data& sd, uint32& weight, uint16& count ){
+	weight = 0;
+	count = 0;
+
+	for( int16 idx : jobrecord_equipped_indexes( sd ) ){
+		weight += jobrecord_item_weight( sd.inventory.u.items_inventory[idx] );
+		count++;
+	}
+}
+
+/// Moves every equipped item (costumes, shadow gear and ammo included) out of the inventory into the record.
+/// Called before the record's save is queued: the stash rows are written before the inventory save.
+void jobrecord_stash_equipment( map_session_data& sd, s_job_record_full& r ){
+	r.items.clear();
+	r.base.equip_weight = 0;
+	r.base.equip_count = 0;
+
+	for( int16 idx : jobrecord_equipped_indexes( sd ) ){
+		item it = sd.inventory.u.items_inventory[idx];
+
+		it.id = 0;
+		it.equipSwitch = 0; // `equip` keeps the slot(s) to equip it again
+		r.items.push_back( it );
+		r.base.equip_weight += jobrecord_item_weight( it );
+		r.base.equip_count++;
+
+		// type 4: no status recalculation per item, jobrecord_apply recalculates once
+		pc_delitem( &sd, idx, it.amount, 4, 0, LOG_TYPE_OTHER );
+	}
+}
+
+/// Finds an item that was just added to the inventory (stackable items such as ammo merge
+/// into an existing stack, so pc_additem does not always report the index)
+int16 jobrecord_find_added( const map_session_data& sd, const item& it ){
+	for( int16 i = 0; i < MAX_INVENTORY; i++ ){
+		const item& inv = sd.inventory.u.items_inventory[i];
+
+		if( inv.nameid != it.nameid || inv.equip != 0 ){
+			continue;
+		}
+		if( it.unique_id != 0 ? inv.unique_id == it.unique_id : memcmp( inv.card, it.card, sizeof( it.card ) ) == 0 ){
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+/// Sends items to the character by mail. Sender id 0: system mail never expires (§2.4 of the design).
+void jobrecord_mail_items( map_session_data& sd, const std::vector<item>& items, const char* record_name ){
+	for( size_t start = 0; start < items.size(); start += MAIL_MAX_ITEM ){
+		mail_message msg = {};
+
+		msg.dest_id = sd.status.char_id;
+		safestrncpy( msg.dest_name, sd.status.name, NAME_LENGTH );
+		safestrncpy( msg.send_name, "Job Record", NAME_LENGTH );
+		safesnprintf( msg.title, MAIL_TITLE_LENGTH, "Equipment of %s", record_name );
+		safestrncpy( msg.body, "This equipment could not be put back into your inventory when you switched records.", MAIL_BODY_LENGTH );
+		msg.status = MAIL_NEW;
+		msg.type = MAIL_INBOX_NORMAL;
+		msg.timestamp = time( nullptr );
+
+		for( size_t i = 0; i < MAIL_MAX_ITEM && start + i < items.size(); i++ ){
+			msg.item[i] = items[start + i];
+			msg.item[i].id = 0;
+			msg.item[i].equip = 0;
+			msg.item[i].equipSwitch = 0;
+		}
+
+		intif_Mail_send( 0, &msg );
+	}
+}
+
+/// Puts a record's stashed equipment back into the inventory and equips it in its saved slots.
+/// Items already in the inventory, cart or storage (a duplicate left by an interrupted save) are
+/// skipped; expired rentals are removed by pc_additem; anything that cannot be added is mailed.
+void jobrecord_unstash_equipment( map_session_data& sd, const std::vector<item>& items, const char* record_name ){
+	std::vector<item> failed;
+
+	auto owned = [&sd]( uint64 unique_id ) -> bool {
+		for( int32 i = 0; i < MAX_INVENTORY; i++ ){
+			if( sd.inventory.u.items_inventory[i].nameid != 0 && sd.inventory.u.items_inventory[i].unique_id == unique_id ){
+				return true;
+			}
+		}
+		for( int32 i = 0; i < MAX_CART; i++ ){
+			if( sd.cart.u.items_cart[i].nameid != 0 && sd.cart.u.items_cart[i].unique_id == unique_id ){
+				return true;
+			}
+		}
+		for( int32 i = 0; i < MAX_STORAGE; i++ ){
+			if( sd.storage.u.items_storage[i].nameid != 0 && sd.storage.u.items_storage[i].unique_id == unique_id ){
+				return true;
+			}
+		}
+		return false;
+	};
+
+	for( const item& stashed : items ){
+		if( stashed.nameid == 0 || stashed.amount <= 0 ){
+			continue;
+		}
+
+		if( stashed.unique_id != 0 && owned( stashed.unique_id ) ){
+			ShowWarning( "Job record: character %u already owns item %u (unique id %" PRIu64 "), skipping the stashed copy.\n",
+				sd.status.char_id, stashed.nameid, stashed.unique_id );
+			continue;
+		}
+
+		item it = stashed;
+		uint32 pos = it.equip;
+
+		it.id = 0;
+		it.equip = 0;
+		it.equipSwitch = 0;
+
+		if( pc_additem( &sd, &it, it.amount, LOG_TYPE_OTHER ) != ADDITEM_SUCCESS ){
+			failed.push_back( stashed );
+			continue;
+		}
+
+		int16 idx = jobrecord_find_added( sd, it );
+
+		// The index is gone when pc_additem removed an expired rental
+		if( idx >= 0 && pos != 0 ){
+			pc_equipitem( &sd, idx, pos );
+		}
+	}
+
+	if( !failed.empty() ){
+		ShowWarning( "Job record: %u stashed item(s) of character %u did not fit, sending them by mail.\n", static_cast<uint32>( failed.size() ), sd.status.char_id );
+		jobrecord_mail_items( sd, failed, record_name );
+		clif_displaymessage( sd.fd, "Job record: some equipment did not fit in your inventory and was sent to your mailbox." );
+	}
+}
+
+/// Predicts the weight after a switch (§2.2 of the design). Item bonuses to the maximum weight
+/// (bAddMaxWeight) are left out, so the estimate errs on the heavy side.
+void jobrecord_predict( const map_session_data& sd, uint16 class_, uint16 str, uint8 inccarry_lv, uint8 all_inccarry_lv,
+	uint32 incoming_weight, uint16 incoming_count, s_job_record_preview& out ){
+	uint32 outgoing_weight;
+	uint16 outgoing_count;
+
+	jobrecord_equipped_totals( sd, outgoing_weight, outgoing_count );
+
+	out.weight = sd.weight - std::min<uint32>( outgoing_weight, sd.weight ) + incoming_weight;
+	out.max_weight = std::max<int32>( job_db.get_maxWeight( class_ ), 0 ) + str * 300 + inccarry_lv * 2000 + all_inccarry_lv * 2000;
+	out.needed_slots = incoming_count;
+	out.free_slots = pc_inventoryblank( &sd ) + outgoing_count;
+	out.warn_rate = battle_config.natural_heal_weight_rate;
+	out.rate = out.max_weight > 0 ? static_cast<uint32>( static_cast<uint64>( out.weight ) * 100 / out.max_weight ) : 100;
+}
+
+/// Hard limits of a switch: adding the equipment back must not fail
+const char* jobrecord_check_preview( const s_job_record_preview& p ){
+	if( p.weight > p.max_weight ){
+		return "You would be too heavy after switching, store some items first.";
+	}
+	if( p.free_slots < p.needed_slots ){
+		return "Your inventory does not have enough free slots for that record's equipment.";
+	}
+
+	return nullptr;
+}
+
 /// Builds the data of a brand new record: base level 1, Novice (human) or Summoner (doram)
 s_job_record_full jobrecord_build_new( const map_session_data& sd, uint32 record_id, const char* name, bool doram ){
 	s_job_record_full r;
@@ -444,8 +637,10 @@ s_job_record_full jobrecord_build_new( const map_session_data& sd, uint32 record
 }
 
 /// Saves the character's current progress as the outgoing record and marks the switch journal.
+/// The equipped items move out of the inventory into the record's stash.
 /// The first time, the current progress becomes a new record named JOBRECORD_DEFAULT_NAME.
-void jobrecord_save_outgoing( map_session_data& sd, s_job_record_session& jr, uint32 target_id ){
+/// @return The outgoing record as saved
+s_job_record_full jobrecord_save_outgoing( map_session_data& sd, s_job_record_session& jr, uint32 target_id ){
 	uint32 outgoing_id = jr.active_record;
 	const char* name = JOBRECORD_DEFAULT_NAME;
 	uint32 created = 0;
@@ -460,6 +655,8 @@ void jobrecord_save_outgoing( map_session_data& sd, s_job_record_session& jr, ui
 	s_job_record_full outgoing = jobrecord_snapshot( sd, outgoing_id, name, created );
 	s_job_record_upsert_end end = {};
 
+	jobrecord_stash_equipment( sd, outgoing );
+
 	end.next_record_id = jr.next_record_id;
 	end.pending_to = target_id;
 	end.set_pending = 1;
@@ -469,14 +666,26 @@ void jobrecord_save_outgoing( map_session_data& sd, s_job_record_session& jr, ui
 	jr.active_record = outgoing_id;
 	jr.pending_to = target_id;
 
-	// Persist the outgoing record and the journal before anything changes (§9.2 of the design)
+	// Persist the outgoing record (with its stash) and the journal, then the inventory without
+	// the stashed items, before anything else changes (§9.2 of the design)
 	chrif_save( &sd, CSAVE_INVENTORY );
+
+	return outgoing;
 }
 
-/// Makes a record active: local pointer, commit queued, saved with the new state
-void jobrecord_activate( map_session_data& sd, s_job_record_session& jr, uint32 record_id ){
+/// Makes a record active: local pointer, commit queued (clears that record's stash rows,
+/// whose items are in the inventory now), saved with the new state
+void jobrecord_activate( map_session_data& sd, s_job_record_session& jr, uint32 record_id, uint32 clear_stash_record ){
 	jr.active_record = record_id;
-	jobrecord_queue_commit( sd, record_id, 0 ); // Stash clearing: phase 5
+
+	for( s_job_record_summary& s : jr.records ){
+		if( s.base.record_id == clear_stash_record ){
+			s.base.equip_weight = 0;
+			s.base.equip_count = 0;
+		}
+	}
+
+	jobrecord_queue_commit( sd, record_id, clear_stash_record );
 	chrif_save( &sd, CSAVE_INVENTORY );
 }
 
@@ -486,27 +695,57 @@ void jobrecord_finish_switch( map_session_data& sd, s_job_record_session& jr, co
 
 	jr.state = JOBRECORD_STATE_APPLYING;
 
+	// Re-check with the exact data now that the record is loaded (time has passed since the request)
+	const char* error = nullptr;
+	s_job_record_preview preview;
+	uint32 incoming_weight = 0;
+	uint8 skill_lv[2] = {};
+
+	for( const item& it : target.items ){
+		incoming_weight += jobrecord_item_weight( it );
+	}
+	for( const s_skill& skill : target.skills ){
+		if( skill.id == MC_INCCARRY ){
+			skill_lv[0] = skill.lv;
+		}else if( skill.id == ALL_INCCARRY ){
+			skill_lv[1] = skill.lv;
+		}
+	}
+	jobrecord_predict( sd, target.base.class_, target.base.str, skill_lv[0], skill_lv[1], incoming_weight,
+		static_cast<uint16>( target.items.size() ), preview );
+
 	if( !chrif_isconnected() || pc_isdead( &sd ) ){
-		clif_displaymessage( sd.fd, "Job record: switch cancelled." );
+		error = "Job record: switch cancelled.";
+	}else if( !job_db.exists( target.base.class_ ) ){
+		error = "Job record: this record could not be applied.";
+	}else if( const char* limit = jobrecord_check_preview( preview ); limit != nullptr ){
+		error = limit;
+	}
+
+	if( error != nullptr ){
+		clif_displaymessage( sd.fd, error );
 		jr.state = JOBRECORD_STATE_IDLE;
 		return;
 	}
 
-	jobrecord_save_outgoing( sd, jr, target.base.record_id );
+	s_job_record_full outgoing = jobrecord_save_outgoing( sd, jr, target.base.record_id );
 
 	if( !jobrecord_apply( sd, target ) ){
-		// Nothing changed yet: the journal is cleared again by committing the outgoing record
-		jobrecord_activate( sd, jr, jr.active_record );
+		// Only the equipment moved: put it back, the journal is cleared by committing the outgoing record
+		jobrecord_unstash_equipment( sd, outgoing.items, outgoing.base.name );
+		jobrecord_activate( sd, jr, outgoing.base.record_id, outgoing.base.record_id );
 		clif_displaymessage( sd.fd, "Job record: this record could not be applied." );
 		jr.state = JOBRECORD_STATE_IDLE;
 		return;
 	}
 
+	jobrecord_unstash_equipment( sd, target.items, target.base.name );
+
 	s_job_record_full used = target;
 
 	used.base.last_used = jobrecord_now();
 	jobrecord_update_summary( jr, used );
-	jobrecord_activate( sd, jr, target.base.record_id );
+	jobrecord_activate( sd, jr, target.base.record_id, target.base.record_id );
 	jr.state = JOBRECORD_STATE_IDLE;
 
 	safesnprintf( output, sizeof( output ), "Job record: switched to '%s' (%s, base %u, job %u).",
@@ -669,8 +908,13 @@ const char* jobrecord_start_switch( map_session_data& sd, uint32 record_id ){
 	if( record_id == jr.active_record ){
 		return "This record is already active.";
 	}
-	if( jobrecord_find_summary( jr, record_id ) == nullptr ){
-		return "This record does not exist.";
+	s_job_record_preview preview;
+
+	if( const char* error = jobrecord_preview( sd, record_id, preview ); error != nullptr ){
+		return error;
+	}
+	if( const char* error = jobrecord_check_preview( preview ); error != nullptr ){
+		return error;
 	}
 	if( !jobrecord_request_load( sd, record_id ) ){
 		return "The record could not be requested, try again later.";
@@ -699,18 +943,27 @@ const char* jobrecord_create( map_session_data& sd, const char* name, bool doram
 		return "You already have the maximum number of records.";
 	}
 
+	s_job_record_preview preview;
+
+	jobrecord_preview_new( sd, doram, preview );
+
+	if( const char* error = jobrecord_check_preview( preview ); error != nullptr ){
+		return error;
+	}
+
 	jr.state = JOBRECORD_STATE_APPLYING;
 
 	// The id of the outgoing record is allocated first (when it has none yet), then the new one
 	uint32 new_id = ( jr.active_record == 0 ) ? jr.next_record_id + 1 : jr.next_record_id;
 
-	jobrecord_save_outgoing( sd, jr, new_id );
+	s_job_record_full outgoing = jobrecord_save_outgoing( sd, jr, new_id );
 	jr.next_record_id = std::max( jr.next_record_id, new_id + 1 );
 
 	s_job_record_full fresh = jobrecord_build_new( sd, new_id, name, doram );
 
 	if( !jobrecord_apply( sd, fresh ) ){
-		jobrecord_activate( sd, jr, jr.active_record );
+		jobrecord_unstash_equipment( sd, outgoing.items, outgoing.base.name );
+		jobrecord_activate( sd, jr, outgoing.base.record_id, outgoing.base.record_id );
 		jr.state = JOBRECORD_STATE_IDLE;
 		return "The new record could not be created.";
 	}
@@ -727,8 +980,34 @@ const char* jobrecord_create( map_session_data& sd, const char* name, bool doram
 
 	jobrecord_update_summary( jr, created );
 	jobrecord_queue_upsert( sd, created, end ); // So the record exists in the list from now on
-	jobrecord_activate( sd, jr, new_id );
+	jobrecord_activate( sd, jr, new_id, 0 ); // A new record has no stash
 	jr.state = JOBRECORD_STATE_IDLE;
+
+	return nullptr;
+}
+
+/// Predicts the weight and inventory slots after switching to a saved record, from the record list
+/// @return nullptr on success, otherwise a message for the player
+const char* jobrecord_preview( map_session_data& sd, uint32 record_id, s_job_record_preview& out ){
+	if( sd.job_record == nullptr || sd.job_record->state == JOBRECORD_STATE_UNLOADED ){
+		return "Your job records are still loading.";
+	}
+
+	const s_job_record_summary* s = jobrecord_find_summary( *sd.job_record, record_id );
+
+	if( s == nullptr ){
+		return "This record does not exist.";
+	}
+
+	// skill_lv follows job_record_summary_skills: MC_INCCARRY, ALL_INCCARRY
+	jobrecord_predict( sd, s->base.class_, s->base.str, s->skill_lv[0], s->skill_lv[1], s->base.equip_weight, s->base.equip_count, out );
+
+	return nullptr;
+}
+
+/// Predicts the weight after creating a new record (no equipment, base stats)
+const char* jobrecord_preview_new( map_session_data& sd, bool doram, s_job_record_preview& out ){
+	jobrecord_predict( sd, doram ? JOB_SUMMONER : JOB_NOVICE, 1, 0, 0, 0, 0, out );
 
 	return nullptr;
 }

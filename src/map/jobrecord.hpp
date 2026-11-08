@@ -73,6 +73,16 @@ struct s_job_record_session {
 	uint32 commit_clear_stash = 0;
 };
 
+/// Predicted state after a switch (§2.2 of the design)
+struct s_job_record_preview {
+	uint32 weight = 0;       ///< Predicted weight (x10, like map_session_data::weight)
+	uint32 max_weight = 0;   ///< Predicted maximum weight, without item bonuses
+	uint32 rate = 0;         ///< weight * 100 / max_weight
+	uint32 warn_rate = 0;    ///< Warn from this rate on (natural_heal_weight_rate)
+	uint16 needed_slots = 0; ///< Inventory slots the target record's equipment needs
+	uint16 free_slots = 0;   ///< Free slots after the current equipment has been stashed
+};
+
 // Skills whose learned level is reported in the record list (weight preview)
 extern const uint16 job_record_summary_skills[];
 extern const uint8 job_record_summary_skill_count;
@@ -84,6 +94,8 @@ void jobrecord_request_list( map_session_data& sd );
 const char* jobrecord_start_switch( map_session_data& sd, uint32 record_id );
 const char* jobrecord_create( map_session_data& sd, const char* name, bool doram );
 const char* jobrecord_rename( map_session_data& sd, uint32 record_id, const char* name );
+const char* jobrecord_preview( map_session_data& sd, uint32 record_id, s_job_record_preview& out );
+const char* jobrecord_preview_new( map_session_data& sd, bool doram, s_job_record_preview& out );
 
 // Hooks in chrif_save (called only while the char-server is connected)
 void jobrecord_save_before_inventory( map_session_data& sd );
