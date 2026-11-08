@@ -49,3 +49,19 @@ Body:
       NoAuction: true
     Script: |
       callfunc "F_JobRecord";
+
+  # Job Master gifts (npc/custom/jobmaster.txt, Get_Job_Equip) can be put in storage.
+  # They are given once per character, so a player keeps them across job records.
+  # Only Trade.NoStorage changes, the rest of each item stays as in db/re.
+  - Id: 2795 # Green_Apple_Ring (3rd jobs)
+    Trade:
+      NoStorage: false
+  - Id: 6121 # Makeover_Brush (Shadow Chaser)
+    Trade:
+      NoStorage: false
+  - Id: 6122 # Paint_Brush (Shadow Chaser)
+    Trade:
+      NoStorage: false
+  - Id: 490087 # 4th_Q_Necklace (4th jobs)
+    Trade:
+      NoStorage: false
