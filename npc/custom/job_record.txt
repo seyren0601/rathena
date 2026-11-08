@@ -23,7 +23,15 @@
 //= On failure the reason is in @jobrecord_error$.
 //============================================================
 
+// Called by the item. An item script can't wait for the player (pc_useitem frees
+// its state as soon as it pauses at a menu), so the menu runs from a player
+// timer in the JobRecord_Book NPC instead, after the item use has finished.
 function	script	F_JobRecord	{
+	addtimer 1, "JobRecord_Book::OnUse";
+	end;
+}
+
+function	script	F_JobRecordMenu	{
 	.@npc$ = "[Job Record Book]";
 
 	while (1) {
@@ -289,6 +297,11 @@ L_Delete:
 OnPCLoginEvent:
 	if (countitem(.item_id) == 0)
 		getitembound .item_id, 1, Bound_Char;
+	end;
+
+// Started by F_JobRecord (the item) through addtimer
+OnUse:
+	callfunc "F_JobRecordMenu";
 	end;
 
 OnInit:
